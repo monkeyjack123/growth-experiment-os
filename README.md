@@ -42,12 +42,13 @@ for item in rank_experiments(
     min_impact=0.5,
     min_score=150,
     min_confidence_weighted_impact=0.5,
+    min_reach_per_effort=250,
     max_results=1,
 ):
     print(item)
 ```
 
-Use `min_confidence` to exclude low-confidence ideas, `max_effort` to keep only shippable low-lift experiments, `min_reach` to avoid tiny audiences, `min_impact` to cut low-upside ideas, `min_score` to enforce a minimum ROI bar, `min_confidence_weighted_impact` to block ideas that look big but carry weak confidence-adjusted upside, and `max_results` to cap output to the top N candidates for sprint planning.
+Use `min_confidence` to exclude low-confidence ideas, `max_effort` to keep only shippable low-lift experiments, `min_reach` to avoid tiny audiences, `min_impact` to cut low-upside ideas, `min_score` to enforce a minimum ROI bar, `min_confidence_weighted_impact` to block ideas that look big but carry weak confidence-adjusted upside, `min_reach_per_effort` to enforce efficiency, and `max_results` to cap output to the top N candidates for sprint planning.
 
 See `docs/prioritization.md` for full scoring and input contract details.
 
