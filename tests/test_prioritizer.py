@@ -116,6 +116,23 @@ class PrioritizerTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "min_score must be >= 0"):
             rank_experiments(experiments, min_score=-1)
 
+    def test_filters_by_min_confidence_weighted_impact(self):
+        experiments = [
+            {"name": "Big reach low confidence", "reach": 3000, "impact": 0.9, "confidence": 0.3, "effort": 2},
+            {"name": "Solid bet", "reach": 900, "impact": 0.8, "confidence": 0.8, "effort": 2},
+        ]
+
+        ranked = rank_experiments(experiments, min_confidence_weighted_impact=0.5)
+
+        self.assertEqual(len(ranked), 1)
+        self.assertEqual(ranked[0].name, "Solid bet")
+
+    def test_rejects_invalid_min_confidence_weighted_impact(self):
+        experiments = [{"name": "One", "reach": 100, "impact": 1, "confidence": 0.8, "effort": 1}]
+
+        with self.assertRaisesRegex(ValueError, "min_confidence_weighted_impact must be >= 0"):
+            rank_experiments(experiments, min_confidence_weighted_impact=-0.1)
+
     def test_limits_results_with_max_results(self):
         experiments = [
             {"name": "A", "reach": 1000, "impact": 0.8, "confidence": 0.9, "effort": 2},

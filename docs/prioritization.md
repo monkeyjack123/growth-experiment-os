@@ -19,6 +19,7 @@ Optional ranking filters:
 - `min_reach` (number `>= 0`) — excludes items with reach smaller than this threshold
 - `min_impact` (number `>= 0`) — excludes items with impact smaller than this threshold
 - `min_score` (number `>= 0`) — excludes items with final score lower than this threshold
+- `min_confidence_weighted_impact` (number `>= 0`) — excludes items where `impact * confidence` falls below this floor
 - `max_results` (positive integer) — returns only the top N items after ranking
 
 ## Scoring
