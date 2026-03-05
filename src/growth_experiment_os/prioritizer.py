@@ -26,6 +26,7 @@ def rank_experiments(
     min_score: Optional[float] = None,
     min_confidence_weighted_impact: Optional[float] = None,
     min_reach_per_effort: Optional[float] = None,
+    min_expected_lift: Optional[float] = None,
     max_results: Optional[int] = None,
 ) -> List[RankedExperiment]:
     """Rank experiments by a confidence-adjusted RICE-like score.
@@ -45,6 +46,7 @@ def rank_experiments(
       - min_score (>=0): skip experiments below this final computed score.
       - min_confidence_weighted_impact (>=0): skip experiments whose impact*confidence is below this floor.
       - min_reach_per_effort (>=0): skip experiments whose reach/effort efficiency is below this floor.
+      - min_expected_lift (>=0): skip experiments whose expected lift (reach*impact*confidence) is below this floor.
       - max_results (>0 integer): return only the top N ranked experiments.
 
     Score formula:
@@ -71,6 +73,8 @@ def rank_experiments(
         raise ValueError("min_confidence_weighted_impact must be >= 0")
     if min_reach_per_effort is not None and float(min_reach_per_effort) < 0:
         raise ValueError("min_reach_per_effort must be >= 0")
+    if min_expected_lift is not None and float(min_expected_lift) < 0:
+        raise ValueError("min_expected_lift must be >= 0")
     if max_results is not None:
         if int(max_results) != max_results or int(max_results) <= 0:
             raise ValueError("max_results must be a positive integer")
@@ -104,6 +108,9 @@ def rank_experiments(
             continue
 
         if min_reach_per_effort is not None and (reach / effort) < float(min_reach_per_effort):
+            continue
+
+        if min_expected_lift is not None and (reach * impact * confidence) < float(min_expected_lift):
             continue
 
         validated.append(exp)
