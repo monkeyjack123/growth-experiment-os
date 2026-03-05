@@ -16,6 +16,7 @@ Optional ranking filters:
 
 - `min_confidence` (number in `0..1`) — excludes items below this threshold before scoring
 - `max_effort` (number `> 0`) — excludes items with effort greater than this threshold
+- `min_reach` (number `>= 0`) — excludes items with reach smaller than this threshold
 
 ## Scoring
 
