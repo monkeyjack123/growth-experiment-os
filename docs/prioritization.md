@@ -9,8 +9,12 @@ Each experiment must include:
 - `name` (string)
 - `reach` (number)
 - `impact` (number)
-- `confidence` (number, typically 0-1)
+- `confidence` (number, must be within `0..1`)
 - `effort` (number, must be > 0)
+
+Optional ranking filter:
+
+- `min_confidence` (number in `0..1`) — excludes items below this threshold before scoring
 
 ## Scoring
 

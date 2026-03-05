@@ -34,9 +34,11 @@ experiments = [
   {"name": "SEO refresh", "reach": 1000, "impact": 0.6, "confidence": 0.8, "effort": 4},
 ]
 
-for item in rank_experiments(experiments):
+for item in rank_experiments(experiments, min_confidence=0.7):
     print(item)
 ```
+
+Use `min_confidence` when you want to exclude low-confidence ideas from the shortlist.
 
 See `docs/prioritization.md` for full scoring and input contract details.
 

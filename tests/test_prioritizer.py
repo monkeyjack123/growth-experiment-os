@@ -25,6 +25,29 @@ class PrioritizerTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "effort must be > 0"):
             rank_experiments(experiments)
 
+    def test_rejects_confidence_outside_unit_interval(self):
+        experiments = [{"name": "Overconfident", "reach": 100, "impact": 1, "confidence": 1.2, "effort": 2}]
+
+        with self.assertRaisesRegex(ValueError, "confidence must be within \[0, 1\]"):
+            rank_experiments(experiments)
+
+    def test_filters_by_min_confidence_threshold(self):
+        experiments = [
+            {"name": "Bold bet", "reach": 2000, "impact": 1.0, "confidence": 0.4, "effort": 2},
+            {"name": "Safer win", "reach": 900, "impact": 0.8, "confidence": 0.85, "effort": 2},
+        ]
+
+        ranked = rank_experiments(experiments, min_confidence=0.6)
+
+        self.assertEqual(len(ranked), 1)
+        self.assertEqual(ranked[0].name, "Safer win")
+
+    def test_rejects_invalid_min_confidence(self):
+        experiments = [{"name": "One", "reach": 100, "impact": 1, "confidence": 0.8, "effort": 1}]
+
+        with self.assertRaisesRegex(ValueError, "min_confidence must be within \[0, 1\]"):
+            rank_experiments(experiments, min_confidence=1.1)
+
 
 if __name__ == "__main__":
     unittest.main()

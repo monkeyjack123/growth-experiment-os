@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Iterable, List, Mapping, Sequence
+from typing import List, Mapping, Optional, Sequence
 
 
 @dataclass(frozen=True)
@@ -17,15 +17,20 @@ def _normalize(value: float, minimum: float, maximum: float) -> float:
     return (value - minimum) / (maximum - minimum)
 
 
-def rank_experiments(experiments: Sequence[Mapping[str, float]]) -> List[RankedExperiment]:
+def rank_experiments(
+    experiments: Sequence[Mapping[str, float]], min_confidence: Optional[float] = None
+) -> List[RankedExperiment]:
     """Rank experiments by a confidence-adjusted RICE-like score.
 
     Required fields per experiment:
       - name
       - reach
       - impact
-      - confidence   (0-1 range expected)
+      - confidence   (must be in 0-1 range)
       - effort       (must be > 0)
+
+    Optional args:
+      - min_confidence (0-1): skip experiments below this confidence threshold.
 
     Score formula:
       ((reach * impact * confidence) / effort) * (0.7 + 0.3 * normalized_confidence_impact)
@@ -37,16 +42,34 @@ def rank_experiments(experiments: Sequence[Mapping[str, float]]) -> List[RankedE
     if not experiments:
         return []
 
-    for exp in experiments:
-        if exp.get("effort", 0) <= 0:
-            raise ValueError(f"effort must be > 0 for experiment '{exp.get('name', '<unknown>')}'")
+    if min_confidence is not None and not 0 <= float(min_confidence) <= 1:
+        raise ValueError("min_confidence must be within [0, 1]")
 
-    cwi_values = [float(exp["impact"]) * float(exp["confidence"]) for exp in experiments]
+    validated: List[Mapping[str, float]] = []
+    for exp in experiments:
+        name = str(exp.get("name", "<unknown>"))
+        confidence = float(exp["confidence"])
+        effort = float(exp["effort"])
+
+        if not 0 <= confidence <= 1:
+            raise ValueError(f"confidence must be within [0, 1] for experiment '{name}'")
+        if effort <= 0:
+            raise ValueError(f"effort must be > 0 for experiment '{name}'")
+
+        if min_confidence is not None and confidence < float(min_confidence):
+            continue
+
+        validated.append(exp)
+
+    if not validated:
+        return []
+
+    cwi_values = [float(exp["impact"]) * float(exp["confidence"]) for exp in validated]
     cwi_min = min(cwi_values)
     cwi_max = max(cwi_values)
 
     ranked: List[RankedExperiment] = []
-    for exp in experiments:
+    for exp in validated:
         name = str(exp["name"])
         reach = float(exp["reach"])
         impact = float(exp["impact"])
