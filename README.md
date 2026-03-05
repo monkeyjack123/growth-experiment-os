@@ -39,11 +39,12 @@ for item in rank_experiments(
     min_confidence=0.7,
     max_effort=3,
     min_reach=500,
+    min_impact=0.5,
 ):
     print(item)
 ```
 
-Use `min_confidence` to exclude low-confidence ideas, `max_effort` to keep only shippable low-lift experiments, and `min_reach` to avoid ideas with tiny audiences.
+Use `min_confidence` to exclude low-confidence ideas, `max_effort` to keep only shippable low-lift experiments, `min_reach` to avoid tiny audiences, and `min_impact` to cut low-upside ideas.
 
 See `docs/prioritization.md` for full scoring and input contract details.
 

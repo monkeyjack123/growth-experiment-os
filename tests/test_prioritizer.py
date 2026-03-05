@@ -82,6 +82,23 @@ class PrioritizerTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "min_reach must be >= 0"):
             rank_experiments(experiments, min_reach=-1)
 
+    def test_filters_by_min_impact_threshold(self):
+        experiments = [
+            {"name": "Low impact noise", "reach": 5000, "impact": 0.2, "confidence": 0.95, "effort": 1},
+            {"name": "High impact bet", "reach": 900, "impact": 0.8, "confidence": 0.8, "effort": 2},
+        ]
+
+        ranked = rank_experiments(experiments, min_impact=0.5)
+
+        self.assertEqual(len(ranked), 1)
+        self.assertEqual(ranked[0].name, "High impact bet")
+
+    def test_rejects_invalid_min_impact(self):
+        experiments = [{"name": "One", "reach": 100, "impact": 1, "confidence": 0.8, "effort": 1}]
+
+        with self.assertRaisesRegex(ValueError, "min_impact must be >= 0"):
+            rank_experiments(experiments, min_impact=-0.1)
+
 
 if __name__ == "__main__":
     unittest.main()

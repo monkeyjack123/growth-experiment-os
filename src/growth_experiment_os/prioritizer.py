@@ -22,6 +22,7 @@ def rank_experiments(
     min_confidence: Optional[float] = None,
     max_effort: Optional[float] = None,
     min_reach: Optional[float] = None,
+    min_impact: Optional[float] = None,
 ) -> List[RankedExperiment]:
     """Rank experiments by a confidence-adjusted RICE-like score.
 
@@ -36,6 +37,7 @@ def rank_experiments(
       - min_confidence (0-1): skip experiments below this confidence threshold.
       - max_effort (>0): skip experiments whose effort exceeds this threshold.
       - min_reach (>=0): skip experiments below this audience threshold.
+      - min_impact: skip experiments below this minimum impact score.
 
     Score formula:
       ((reach * impact * confidence) / effort) * (0.7 + 0.3 * normalized_confidence_impact)
@@ -53,6 +55,8 @@ def rank_experiments(
         raise ValueError("max_effort must be > 0")
     if min_reach is not None and float(min_reach) < 0:
         raise ValueError("min_reach must be >= 0")
+    if min_impact is not None and float(min_impact) < 0:
+        raise ValueError("min_impact must be >= 0")
 
     validated: List[Mapping[str, float]] = []
     for exp in experiments:
@@ -60,6 +64,7 @@ def rank_experiments(
         confidence = float(exp["confidence"])
         effort = float(exp["effort"])
         reach = float(exp["reach"])
+        impact = float(exp["impact"])
 
         if not 0 <= confidence <= 1:
             raise ValueError(f"confidence must be within [0, 1] for experiment '{name}'")
@@ -71,6 +76,8 @@ def rank_experiments(
         if max_effort is not None and effort > float(max_effort):
             continue
         if min_reach is not None and reach < float(min_reach):
+            continue
+        if min_impact is not None and impact < float(min_impact):
             continue
 
         validated.append(exp)
