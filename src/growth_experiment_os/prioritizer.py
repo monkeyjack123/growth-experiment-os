@@ -18,7 +18,9 @@ def _normalize(value: float, minimum: float, maximum: float) -> float:
 
 
 def rank_experiments(
-    experiments: Sequence[Mapping[str, float]], min_confidence: Optional[float] = None
+    experiments: Sequence[Mapping[str, float]],
+    min_confidence: Optional[float] = None,
+    max_effort: Optional[float] = None,
 ) -> List[RankedExperiment]:
     """Rank experiments by a confidence-adjusted RICE-like score.
 
@@ -31,6 +33,7 @@ def rank_experiments(
 
     Optional args:
       - min_confidence (0-1): skip experiments below this confidence threshold.
+      - max_effort (>0): skip experiments whose effort exceeds this threshold.
 
     Score formula:
       ((reach * impact * confidence) / effort) * (0.7 + 0.3 * normalized_confidence_impact)
@@ -44,6 +47,8 @@ def rank_experiments(
 
     if min_confidence is not None and not 0 <= float(min_confidence) <= 1:
         raise ValueError("min_confidence must be within [0, 1]")
+    if max_effort is not None and float(max_effort) <= 0:
+        raise ValueError("max_effort must be > 0")
 
     validated: List[Mapping[str, float]] = []
     for exp in experiments:
@@ -57,6 +62,8 @@ def rank_experiments(
             raise ValueError(f"effort must be > 0 for experiment '{name}'")
 
         if min_confidence is not None and confidence < float(min_confidence):
+            continue
+        if max_effort is not None and effort > float(max_effort):
             continue
 
         validated.append(exp)
