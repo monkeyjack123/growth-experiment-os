@@ -18,6 +18,7 @@ Optional ranking filters:
 - `max_effort` (number `> 0`) — excludes items with effort greater than this threshold
 - `min_reach` (number `>= 0`) — excludes items with reach smaller than this threshold
 - `min_impact` (number `>= 0`) — excludes items with impact smaller than this threshold
+- `max_results` (positive integer) — returns only the top N items after ranking
 
 ## Scoring
 

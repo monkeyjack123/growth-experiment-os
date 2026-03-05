@@ -99,6 +99,27 @@ class PrioritizerTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "min_impact must be >= 0"):
             rank_experiments(experiments, min_impact=-0.1)
 
+    def test_limits_results_with_max_results(self):
+        experiments = [
+            {"name": "A", "reach": 1000, "impact": 0.8, "confidence": 0.9, "effort": 2},
+            {"name": "B", "reach": 900, "impact": 0.7, "confidence": 0.9, "effort": 2},
+            {"name": "C", "reach": 800, "impact": 0.6, "confidence": 0.9, "effort": 2},
+        ]
+
+        ranked = rank_experiments(experiments, max_results=2)
+
+        self.assertEqual(len(ranked), 2)
+        self.assertEqual([item.name for item in ranked], ["A", "B"])
+
+    def test_rejects_invalid_max_results(self):
+        experiments = [{"name": "One", "reach": 100, "impact": 1, "confidence": 0.8, "effort": 1}]
+
+        with self.assertRaisesRegex(ValueError, "max_results must be a positive integer"):
+            rank_experiments(experiments, max_results=0)
+
+        with self.assertRaisesRegex(ValueError, "max_results must be a positive integer"):
+            rank_experiments(experiments, max_results=1.5)
+
 
 if __name__ == "__main__":
     unittest.main()

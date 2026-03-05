@@ -23,6 +23,7 @@ def rank_experiments(
     max_effort: Optional[float] = None,
     min_reach: Optional[float] = None,
     min_impact: Optional[float] = None,
+    max_results: Optional[int] = None,
 ) -> List[RankedExperiment]:
     """Rank experiments by a confidence-adjusted RICE-like score.
 
@@ -38,6 +39,7 @@ def rank_experiments(
       - max_effort (>0): skip experiments whose effort exceeds this threshold.
       - min_reach (>=0): skip experiments below this audience threshold.
       - min_impact: skip experiments below this minimum impact score.
+      - max_results (>0 integer): return only the top N ranked experiments.
 
     Score formula:
       ((reach * impact * confidence) / effort) * (0.7 + 0.3 * normalized_confidence_impact)
@@ -57,6 +59,9 @@ def rank_experiments(
         raise ValueError("min_reach must be >= 0")
     if min_impact is not None and float(min_impact) < 0:
         raise ValueError("min_impact must be >= 0")
+    if max_results is not None:
+        if int(max_results) != max_results or int(max_results) <= 0:
+            raise ValueError("max_results must be a positive integer")
 
     validated: List[Mapping[str, float]] = []
     for exp in experiments:
@@ -109,4 +114,7 @@ def rank_experiments(
             )
         )
 
-    return sorted(ranked, key=lambda item: (-item.score, item.name.lower()))
+    ordered = sorted(ranked, key=lambda item: (-item.score, item.name.lower()))
+    if max_results is not None:
+        return ordered[: int(max_results)]
+    return ordered
