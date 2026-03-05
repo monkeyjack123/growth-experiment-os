@@ -18,5 +18,25 @@ This project helps teams launch products faster with measurable outcomes.
 
 ## Getting started
 
-authoring in progress.
+### Run tests
+
+```bash
+PYTHONPATH=src python3 -m unittest discover -s tests -p 'test_*.py' -v
+```
+
+### Demo ranking snippet
+
+```python
+from growth_experiment_os import rank_experiments
+
+experiments = [
+  {"name": "Onboarding email", "reach": 800, "impact": 0.7, "confidence": 0.9, "effort": 2},
+  {"name": "SEO refresh", "reach": 1000, "impact": 0.6, "confidence": 0.8, "effort": 4},
+]
+
+for item in rank_experiments(experiments):
+    print(item)
+```
+
+See `docs/prioritization.md` for full scoring and input contract details.
 
