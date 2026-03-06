@@ -10,6 +10,7 @@ class RankedExperiment:
     score: float
     confidence_weighted_impact: float
     expected_lift: float
+    reach_per_effort: float
 
 
 def _normalize(value: float, minimum: float, maximum: float) -> float:
@@ -133,6 +134,7 @@ def rank_experiments(
 
         confidence_weighted_impact = impact * confidence
         expected_lift = reach * impact * confidence
+        reach_per_effort = reach / effort
         confidence_boost = 0.7 + 0.3 * _normalize(confidence_weighted_impact, cwi_min, cwi_max)
         score = (expected_lift / effort) * confidence_boost
 
@@ -142,6 +144,7 @@ def rank_experiments(
                 score=round(score, 4),
                 confidence_weighted_impact=round(confidence_weighted_impact, 4),
                 expected_lift=round(expected_lift, 4),
+                reach_per_effort=round(reach_per_effort, 4),
             )
         )
 

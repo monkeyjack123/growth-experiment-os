@@ -46,6 +46,7 @@ Each ranked item contains:
 - `score` (final confidence-adjusted prioritization score)
 - `confidence_weighted_impact` (`impact * confidence`)
 - `expected_lift` (`reach * impact * confidence`, absolute upside before effort penalty)
+- `reach_per_effort` (`reach / effort`, operational leverage for execution planning)
 
 ## Determinism
 
