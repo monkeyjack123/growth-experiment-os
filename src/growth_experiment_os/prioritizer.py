@@ -9,6 +9,7 @@ class RankedExperiment:
     name: str
     score: float
     confidence_weighted_impact: float
+    expected_lift: float
 
 
 def _normalize(value: float, minimum: float, maximum: float) -> float:
@@ -131,14 +132,16 @@ def rank_experiments(
         effort = float(exp["effort"])
 
         confidence_weighted_impact = impact * confidence
+        expected_lift = reach * impact * confidence
         confidence_boost = 0.7 + 0.3 * _normalize(confidence_weighted_impact, cwi_min, cwi_max)
-        score = (reach * impact * confidence / effort) * confidence_boost
+        score = (expected_lift / effort) * confidence_boost
 
         ranked.append(
             RankedExperiment(
                 name=name,
                 score=round(score, 4),
                 confidence_weighted_impact=round(confidence_weighted_impact, 4),
+                expected_lift=round(expected_lift, 4),
             )
         )
 

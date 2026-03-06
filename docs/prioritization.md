@@ -1,6 +1,8 @@
 # Experiment Prioritization (MVP)
 
 `rank_experiments` provides deterministic, confidence-adjusted ranking for growth experiments.
+It returns scored records with both `confidence_weighted_impact` and `expected_lift`
+so planning and reporting can use normalized ranking + absolute upside.
 
 ## Input contract
 
@@ -35,6 +37,15 @@ Then a light confidence-weighted impact multiplier is applied:
 `base_score * (0.7 + 0.3 * normalized(impact * confidence))`
 
 This keeps RICE-like behavior while preferring higher-confidence opportunities.
+
+## Output fields
+
+Each ranked item contains:
+
+- `name`
+- `score` (final confidence-adjusted prioritization score)
+- `confidence_weighted_impact` (`impact * confidence`)
+- `expected_lift` (`reach * impact * confidence`, absolute upside before effort penalty)
 
 ## Determinism
 

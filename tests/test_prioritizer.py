@@ -19,6 +19,16 @@ class PrioritizerTests(unittest.TestCase):
     def test_returns_empty_for_empty_input(self):
         self.assertEqual(rank_experiments([]), [])
 
+    def test_includes_expected_lift_in_ranked_output(self):
+        experiments = [
+            {"name": "Onboarding email", "reach": 800, "impact": 0.7, "confidence": 0.9, "effort": 2},
+        ]
+
+        ranked = rank_experiments(experiments)
+
+        self.assertEqual(len(ranked), 1)
+        self.assertAlmostEqual(ranked[0].expected_lift, 504.0)
+
     def test_rejects_non_positive_effort(self):
         experiments = [{"name": "Bad", "reach": 100, "impact": 1, "confidence": 1, "effort": 0}]
 
