@@ -32,6 +32,7 @@ Optional ranking filters:
 - `max_results` (positive integer) — returns only the top N items after ranking
 - `include_names` (list of strings) — keeps only experiments whose names match this allow-list (case-insensitive, trimmed)
 - `exclude_names` (list of strings) — excludes experiments whose names match this deny-list (case-insensitive, trimmed)
+- `sort_by` (string, default `score`) — ranking metric. One of: `score`, `base_score`, `expected_lift`, `reach_per_effort`, `confidence_weighted_impact`, `roi`
 
 ## Scoring
 
@@ -59,7 +60,7 @@ Each ranked item contains:
 
 ## Determinism
 
-- Sort order: score descending
+- Sort order: selected `sort_by` metric descending (defaults to `score`)
 - Tie-break: experiment name (case-insensitive, ascending)
 
 This ensures stable ordering for dashboards and CI snapshots.

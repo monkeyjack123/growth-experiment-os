@@ -49,6 +49,7 @@ def rank_experiments(
     max_results: Optional[int] = None,
     include_names: Optional[Sequence[str]] = None,
     exclude_names: Optional[Sequence[str]] = None,
+    sort_by: str = "score",
 ) -> List[RankedExperiment]:
     """Rank experiments by a confidence-adjusted RICE-like score.
 
@@ -73,6 +74,8 @@ def rank_experiments(
       - max_results (>0 integer): return only the top N ranked experiments.
       - include_names (list[str]): keep only experiments whose names match this allow-list (case-insensitive, trimmed).
       - exclude_names (list[str]): skip experiments whose names match this deny-list (case-insensitive, trimmed).
+      - sort_by (str): ranking metric. One of: score, base_score, expected_lift,
+        reach_per_effort, confidence_weighted_impact, roi.
 
     Score formula:
       ((reach * impact * confidence) / effort) * (0.7 + 0.3 * normalized_confidence_impact)
@@ -107,6 +110,20 @@ def rank_experiments(
     if max_results is not None:
         if int(max_results) != max_results or int(max_results) <= 0:
             raise ValueError("max_results must be a positive integer")
+
+    sort_key = str(sort_by).strip().lower()
+    allowed_sort_keys = {
+        "score",
+        "base_score",
+        "expected_lift",
+        "reach_per_effort",
+        "confidence_weighted_impact",
+        "roi",
+    }
+    if sort_key not in allowed_sort_keys:
+        raise ValueError(
+            "sort_by must be one of: score, base_score, expected_lift, reach_per_effort, confidence_weighted_impact, roi"
+        )
 
     include_set: Optional[Set[str]] = None
     if include_names is not None:
@@ -212,7 +229,7 @@ def rank_experiments(
     if min_score is not None:
         ranked = [item for item in ranked if item.score >= float(min_score)]
 
-    ordered = sorted(ranked, key=lambda item: (-item.score, item.name.lower()))
+    ordered = sorted(ranked, key=lambda item: (-getattr(item, sort_key), item.name.lower()))
     if max_results is not None:
         return ordered[: int(max_results)]
     return ordered

@@ -308,6 +308,22 @@ class PrioritizerTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "exclude_names must contain at least one non-empty name"):
             rank_experiments(experiments, exclude_names=[""])
 
+    def test_sorts_by_expected_lift_when_requested(self):
+        experiments = [
+            {"name": "Low effort", "reach": 500, "impact": 0.6, "confidence": 0.9, "effort": 1},
+            {"name": "High lift", "reach": 1300, "impact": 0.5, "confidence": 0.8, "effort": 4},
+        ]
+
+        ranked = rank_experiments(experiments, sort_by="expected_lift")
+
+        self.assertEqual([item.name for item in ranked], ["High lift", "Low effort"])
+
+    def test_rejects_invalid_sort_by(self):
+        experiments = [{"name": "One", "reach": 100, "impact": 1, "confidence": 0.8, "effort": 1}]
+
+        with self.assertRaisesRegex(ValueError, "sort_by must be one of"):
+            rank_experiments(experiments, sort_by="unknown_metric")
+
 
 if __name__ == "__main__":
     unittest.main()
