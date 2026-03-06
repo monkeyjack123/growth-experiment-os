@@ -39,6 +39,17 @@ class PrioritizerTests(unittest.TestCase):
         self.assertEqual(len(ranked), 1)
         self.assertAlmostEqual(ranked[0].reach_per_effort, 400.0)
 
+    def test_includes_base_score_and_roi_in_ranked_output(self):
+        experiments = [
+            {"name": "Onboarding email", "reach": 800, "impact": 0.7, "confidence": 0.9, "effort": 2},
+        ]
+
+        ranked = rank_experiments(experiments)
+
+        self.assertEqual(len(ranked), 1)
+        self.assertAlmostEqual(ranked[0].base_score, 252.0)
+        self.assertAlmostEqual(ranked[0].roi, 252.0)
+
     def test_rejects_non_positive_effort(self):
         experiments = [{"name": "Bad", "reach": 100, "impact": 1, "confidence": 1, "effort": 0}]
 
@@ -135,6 +146,23 @@ class PrioritizerTests(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, "min_score must be >= 0"):
             rank_experiments(experiments, min_score=-1)
+
+    def test_filters_by_min_base_score(self):
+        experiments = [
+            {"name": "Low base", "reach": 300, "impact": 0.4, "confidence": 0.6, "effort": 3},
+            {"name": "High base", "reach": 1200, "impact": 0.7, "confidence": 0.8, "effort": 2},
+        ]
+
+        ranked = rank_experiments(experiments, min_base_score=200)
+
+        self.assertEqual(len(ranked), 1)
+        self.assertEqual(ranked[0].name, "High base")
+
+    def test_rejects_invalid_min_base_score(self):
+        experiments = [{"name": "One", "reach": 100, "impact": 1, "confidence": 0.8, "effort": 1}]
+
+        with self.assertRaisesRegex(ValueError, "min_base_score must be >= 0"):
+            rank_experiments(experiments, min_base_score=-1)
 
     def test_filters_by_min_confidence_weighted_impact(self):
         experiments = [

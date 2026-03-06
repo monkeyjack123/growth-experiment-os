@@ -8,9 +8,11 @@ from typing import List, Mapping, Optional, Sequence
 class RankedExperiment:
     name: str
     score: float
+    base_score: float
     confidence_weighted_impact: float
     expected_lift: float
     reach_per_effort: float
+    roi: float
 
 
 def _normalize(value: float, minimum: float, maximum: float) -> float:
@@ -26,6 +28,7 @@ def rank_experiments(
     min_reach: Optional[float] = None,
     min_impact: Optional[float] = None,
     min_score: Optional[float] = None,
+    min_base_score: Optional[float] = None,
     min_confidence_weighted_impact: Optional[float] = None,
     min_reach_per_effort: Optional[float] = None,
     min_expected_lift: Optional[float] = None,
@@ -47,6 +50,7 @@ def rank_experiments(
       - min_reach (>=0): skip experiments below this audience threshold.
       - min_impact: skip experiments below this minimum impact score.
       - min_score (>=0): skip experiments below this final computed score.
+      - min_base_score (>=0): skip experiments below the unboosted base score ((reach*impact*confidence)/effort).
       - min_confidence_weighted_impact (>=0): skip experiments whose impact*confidence is below this floor.
       - min_reach_per_effort (>=0): skip experiments whose reach/effort efficiency is below this floor.
       - min_expected_lift (>=0): skip experiments whose expected lift (reach*impact*confidence) is below this floor.
@@ -73,6 +77,8 @@ def rank_experiments(
         raise ValueError("min_impact must be >= 0")
     if min_score is not None and float(min_score) < 0:
         raise ValueError("min_score must be >= 0")
+    if min_base_score is not None and float(min_base_score) < 0:
+        raise ValueError("min_base_score must be >= 0")
     if min_confidence_weighted_impact is not None and float(min_confidence_weighted_impact) < 0:
         raise ValueError("min_confidence_weighted_impact must be >= 0")
     if min_reach_per_effort is not None and float(min_reach_per_effort) < 0:
@@ -117,10 +123,15 @@ def rank_experiments(
             continue
 
         expected_lift = reach * impact * confidence
+        base_score = expected_lift / effort
+
         if min_expected_lift is not None and expected_lift < float(min_expected_lift):
             continue
 
-        if min_roi is not None and (expected_lift / effort) < float(min_roi):
+        if min_roi is not None and base_score < float(min_roi):
+            continue
+
+        if min_base_score is not None and base_score < float(min_base_score):
             continue
 
         validated.append(exp)
@@ -143,16 +154,19 @@ def rank_experiments(
         confidence_weighted_impact = impact * confidence
         expected_lift = reach * impact * confidence
         reach_per_effort = reach / effort
+        base_score = expected_lift / effort
         confidence_boost = 0.7 + 0.3 * _normalize(confidence_weighted_impact, cwi_min, cwi_max)
-        score = (expected_lift / effort) * confidence_boost
+        score = base_score * confidence_boost
 
         ranked.append(
             RankedExperiment(
                 name=name,
                 score=round(score, 4),
+                base_score=round(base_score, 4),
                 confidence_weighted_impact=round(confidence_weighted_impact, 4),
                 expected_lift=round(expected_lift, 4),
                 reach_per_effort=round(reach_per_effort, 4),
+                roi=round(base_score, 4),
             )
         )
 

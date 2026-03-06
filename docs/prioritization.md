@@ -21,6 +21,7 @@ Optional ranking filters:
 - `min_reach` (number `>= 0`) — excludes items with reach smaller than this threshold
 - `min_impact` (number `>= 0`) — excludes items with impact smaller than this threshold
 - `min_score` (number `>= 0`) — excludes items with final score lower than this threshold
+- `min_base_score` (number `>= 0`) — excludes items where base score `(reach * impact * confidence) / effort` falls below this floor
 - `min_confidence_weighted_impact` (number `>= 0`) — excludes items where `impact * confidence` falls below this floor
 - `min_reach_per_effort` (number `>= 0`) — excludes items where `reach / effort` falls below this floor
 - `min_expected_lift` (number `>= 0`) — excludes items where `reach * impact * confidence` falls below this floor
@@ -45,6 +46,8 @@ Each ranked item contains:
 
 - `name`
 - `score` (final confidence-adjusted prioritization score)
+- `base_score` (unboosted score: `(reach * impact * confidence) / effort`)
+- `roi` (alias of `base_score` for planning/reporting readability)
 - `confidence_weighted_impact` (`impact * confidence`)
 - `expected_lift` (`reach * impact * confidence`, absolute upside before effort penalty)
 - `reach_per_effort` (`reach / effort`, operational leverage for execution planning)
