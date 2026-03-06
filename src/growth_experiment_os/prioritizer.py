@@ -54,8 +54,8 @@ def rank_experiments(
 
     Required fields per experiment:
       - name
-      - reach
-      - impact
+      - reach        (must be >= 0)
+      - impact       (must be >= 0)
       - confidence   (must be in 0-1 range)
       - effort       (must be > 0)
 
@@ -130,6 +130,10 @@ def rank_experiments(
 
         if not 0 <= confidence <= 1:
             raise ValueError(f"confidence must be within [0, 1] for experiment '{name}'")
+        if reach < 0:
+            raise ValueError(f"reach must be >= 0 for experiment '{name}'")
+        if impact < 0:
+            raise ValueError(f"impact must be >= 0 for experiment '{name}'")
         if effort <= 0:
             raise ValueError(f"effort must be > 0 for experiment '{name}'")
 

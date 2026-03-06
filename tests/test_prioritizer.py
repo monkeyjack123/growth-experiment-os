@@ -50,6 +50,18 @@ class PrioritizerTests(unittest.TestCase):
         self.assertAlmostEqual(ranked[0].base_score, 252.0)
         self.assertAlmostEqual(ranked[0].roi, 252.0)
 
+    def test_rejects_negative_reach(self):
+        experiments = [{"name": "Bad reach", "reach": -1, "impact": 1, "confidence": 0.8, "effort": 1}]
+
+        with self.assertRaisesRegex(ValueError, "reach must be >= 0"):
+            rank_experiments(experiments)
+
+    def test_rejects_negative_impact(self):
+        experiments = [{"name": "Bad impact", "reach": 10, "impact": -0.1, "confidence": 0.8, "effort": 1}]
+
+        with self.assertRaisesRegex(ValueError, "impact must be >= 0"):
+            rank_experiments(experiments)
+
     def test_rejects_non_positive_effort(self):
         experiments = [{"name": "Bad", "reach": 100, "impact": 1, "confidence": 1, "effort": 0}]
 

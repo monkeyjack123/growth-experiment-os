@@ -56,5 +56,6 @@ for item in rank_experiments(
 Use `min_confidence` to exclude low-confidence ideas, `max_effort` to keep only shippable low-lift experiments, `min_reach` to avoid tiny audiences, `min_impact` to cut low-upside ideas, `min_score` to enforce a minimum boosted-score bar, `min_base_score` to enforce a pure RICE-style floor before confidence boost, `min_confidence_weighted_impact` to block ideas that look big but carry weak confidence-adjusted upside, `min_reach_per_effort` to enforce efficiency, `min_expected_lift` to ensure a minimum absolute upside, `min_roi` to enforce expected lift per unit effort, `include_names`/`exclude_names` to quickly scope or block named experiments, and `max_results` to cap output to the top N candidates for sprint planning. Ranked output includes `base_score`/`roi`, `expected_lift` (absolute upside), and `reach_per_effort` (execution leverage).
 
 See `docs/prioritization.md` for full scoring and input contract details, including
-clear validation errors for missing/non-numeric required fields.
+clear validation errors for missing/non-numeric required fields and guardrails
+that reject negative `reach`/`impact` inputs.
 

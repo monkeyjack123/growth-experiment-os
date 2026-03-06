@@ -9,8 +9,8 @@ so planning and reporting can use normalized ranking + absolute upside.
 Each experiment must include:
 
 - `name` (string)
-- `reach` (number)
-- `impact` (number)
+- `reach` (number, must be >= 0)
+- `impact` (number, must be >= 0)
 - `confidence` (number, must be within `0..1`)
 - `effort` (number, must be > 0)
 
