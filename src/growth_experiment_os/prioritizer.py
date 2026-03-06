@@ -21,6 +21,19 @@ def _normalize(value: float, minimum: float, maximum: float) -> float:
     return (value - minimum) / (maximum - minimum)
 
 
+def _as_float(exp: Mapping[str, float], field: str, name: str) -> float:
+    if field not in exp:
+        raise ValueError(f"missing required field '{field}' for experiment '{name}'")
+
+    raw = exp[field]
+    try:
+        return float(raw)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(
+            f"field '{field}' must be numeric for experiment '{name}'"
+        ) from exc
+
+
 def rank_experiments(
     experiments: Sequence[Mapping[str, float]],
     min_confidence: Optional[float] = None,
@@ -94,10 +107,10 @@ def rank_experiments(
     validated: List[Mapping[str, float]] = []
     for exp in experiments:
         name = str(exp.get("name", "<unknown>"))
-        confidence = float(exp["confidence"])
-        effort = float(exp["effort"])
-        reach = float(exp["reach"])
-        impact = float(exp["impact"])
+        confidence = _as_float(exp, "confidence", name)
+        effort = _as_float(exp, "effort", name)
+        reach = _as_float(exp, "reach", name)
+        impact = _as_float(exp, "impact", name)
 
         if not 0 <= confidence <= 1:
             raise ValueError(f"confidence must be within [0, 1] for experiment '{name}'")

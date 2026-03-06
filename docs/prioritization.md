@@ -14,6 +14,9 @@ Each experiment must include:
 - `confidence` (number, must be within `0..1`)
 - `effort` (number, must be > 0)
 
+If required fields are missing or contain non-numeric values, the function raises
+`ValueError` with the experiment name and offending field for faster triage in CI/logs.
+
 Optional ranking filters:
 
 - `min_confidence` (number in `0..1`) — excludes items below this threshold before scoring

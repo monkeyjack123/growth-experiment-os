@@ -56,6 +56,18 @@ class PrioritizerTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "effort must be > 0"):
             rank_experiments(experiments)
 
+    def test_rejects_missing_required_field_with_clear_error(self):
+        experiments = [{"name": "Missing effort", "reach": 100, "impact": 1, "confidence": 0.8}]
+
+        with self.assertRaisesRegex(ValueError, "missing required field 'effort'"):
+            rank_experiments(experiments)
+
+    def test_rejects_non_numeric_required_field_with_clear_error(self):
+        experiments = [{"name": "Bad reach", "reach": "many", "impact": 1, "confidence": 0.8, "effort": 1}]
+
+        with self.assertRaisesRegex(ValueError, "field 'reach' must be numeric"):
+            rank_experiments(experiments)
+
     def test_rejects_confidence_outside_unit_interval(self):
         experiments = [{"name": "Overconfident", "reach": 100, "impact": 1, "confidence": 1.2, "effort": 2}]
 
