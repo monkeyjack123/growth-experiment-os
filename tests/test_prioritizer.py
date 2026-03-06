@@ -265,6 +265,37 @@ class PrioritizerTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "max_results must be a positive integer"):
             rank_experiments(experiments, max_results=1.5)
 
+    def test_filters_by_include_names_case_insensitive(self):
+        experiments = [
+            {"name": "Onboarding Email", "reach": 800, "impact": 0.7, "confidence": 0.9, "effort": 2},
+            {"name": "SEO refresh", "reach": 1000, "impact": 0.6, "confidence": 0.8, "effort": 4},
+        ]
+
+        ranked = rank_experiments(experiments, include_names=[" onboarding email "])
+
+        self.assertEqual(len(ranked), 1)
+        self.assertEqual(ranked[0].name, "Onboarding Email")
+
+    def test_filters_by_exclude_names_case_insensitive(self):
+        experiments = [
+            {"name": "Onboarding Email", "reach": 800, "impact": 0.7, "confidence": 0.9, "effort": 2},
+            {"name": "SEO refresh", "reach": 1000, "impact": 0.6, "confidence": 0.8, "effort": 4},
+        ]
+
+        ranked = rank_experiments(experiments, exclude_names=["seo refresh"])
+
+        self.assertEqual(len(ranked), 1)
+        self.assertEqual(ranked[0].name, "Onboarding Email")
+
+    def test_rejects_empty_include_or_exclude_name_sets(self):
+        experiments = [{"name": "One", "reach": 100, "impact": 1, "confidence": 0.8, "effort": 1}]
+
+        with self.assertRaisesRegex(ValueError, "include_names must contain at least one non-empty name"):
+            rank_experiments(experiments, include_names=["   "])
+
+        with self.assertRaisesRegex(ValueError, "exclude_names must contain at least one non-empty name"):
+            rank_experiments(experiments, exclude_names=[""])
+
 
 if __name__ == "__main__":
     unittest.main()

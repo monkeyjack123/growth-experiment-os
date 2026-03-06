@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List, Mapping, Optional, Sequence
+from typing import List, Mapping, Optional, Sequence, Set
 
 
 @dataclass(frozen=True)
@@ -47,6 +47,8 @@ def rank_experiments(
     min_expected_lift: Optional[float] = None,
     min_roi: Optional[float] = None,
     max_results: Optional[int] = None,
+    include_names: Optional[Sequence[str]] = None,
+    exclude_names: Optional[Sequence[str]] = None,
 ) -> List[RankedExperiment]:
     """Rank experiments by a confidence-adjusted RICE-like score.
 
@@ -69,6 +71,8 @@ def rank_experiments(
       - min_expected_lift (>=0): skip experiments whose expected lift (reach*impact*confidence) is below this floor.
       - min_roi (>=0): skip experiments whose expected_lift/effort is below this floor.
       - max_results (>0 integer): return only the top N ranked experiments.
+      - include_names (list[str]): keep only experiments whose names match this allow-list (case-insensitive, trimmed).
+      - exclude_names (list[str]): skip experiments whose names match this deny-list (case-insensitive, trimmed).
 
     Score formula:
       ((reach * impact * confidence) / effort) * (0.7 + 0.3 * normalized_confidence_impact)
@@ -104,6 +108,18 @@ def rank_experiments(
         if int(max_results) != max_results or int(max_results) <= 0:
             raise ValueError("max_results must be a positive integer")
 
+    include_set: Optional[Set[str]] = None
+    if include_names is not None:
+        include_set = {str(name).strip().lower() for name in include_names if str(name).strip()}
+        if not include_set:
+            raise ValueError("include_names must contain at least one non-empty name")
+
+    exclude_set: Optional[Set[str]] = None
+    if exclude_names is not None:
+        exclude_set = {str(name).strip().lower() for name in exclude_names if str(name).strip()}
+        if not exclude_set:
+            raise ValueError("exclude_names must contain at least one non-empty name")
+
     validated: List[Mapping[str, float]] = []
     for exp in experiments:
         name = str(exp.get("name", "<unknown>"))
@@ -116,6 +132,12 @@ def rank_experiments(
             raise ValueError(f"confidence must be within [0, 1] for experiment '{name}'")
         if effort <= 0:
             raise ValueError(f"effort must be > 0 for experiment '{name}'")
+
+        normalized_name = name.strip().lower()
+        if include_set is not None and normalized_name not in include_set:
+            continue
+        if exclude_set is not None and normalized_name in exclude_set:
+            continue
 
         if min_confidence is not None and confidence < float(min_confidence):
             continue

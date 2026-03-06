@@ -30,6 +30,8 @@ Optional ranking filters:
 - `min_expected_lift` (number `>= 0`) — excludes items where `reach * impact * confidence` falls below this floor
 - `min_roi` (number `>= 0`) — excludes items where `(reach * impact * confidence) / effort` falls below this floor
 - `max_results` (positive integer) — returns only the top N items after ranking
+- `include_names` (list of strings) — keeps only experiments whose names match this allow-list (case-insensitive, trimmed)
+- `exclude_names` (list of strings) — excludes experiments whose names match this deny-list (case-insensitive, trimmed)
 
 ## Scoring
 
