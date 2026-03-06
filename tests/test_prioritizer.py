@@ -187,6 +187,23 @@ class PrioritizerTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "min_expected_lift must be >= 0"):
             rank_experiments(experiments, min_expected_lift=-1)
 
+    def test_filters_by_min_roi(self):
+        experiments = [
+            {"name": "Tiny niche", "reach": 120, "impact": 0.4, "confidence": 0.8, "effort": 4},
+            {"name": "Lifecycle win", "reach": 900, "impact": 0.5, "confidence": 0.8, "effort": 2},
+        ]
+
+        ranked = rank_experiments(experiments, min_roi=100)
+
+        self.assertEqual(len(ranked), 1)
+        self.assertEqual(ranked[0].name, "Lifecycle win")
+
+    def test_rejects_invalid_min_roi(self):
+        experiments = [{"name": "One", "reach": 100, "impact": 1, "confidence": 0.8, "effort": 1}]
+
+        with self.assertRaisesRegex(ValueError, "min_roi must be >= 0"):
+            rank_experiments(experiments, min_roi=-1)
+
     def test_limits_results_with_max_results(self):
         experiments = [
             {"name": "A", "reach": 1000, "impact": 0.8, "confidence": 0.9, "effort": 2},

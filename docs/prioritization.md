@@ -24,6 +24,7 @@ Optional ranking filters:
 - `min_confidence_weighted_impact` (number `>= 0`) — excludes items where `impact * confidence` falls below this floor
 - `min_reach_per_effort` (number `>= 0`) — excludes items where `reach / effort` falls below this floor
 - `min_expected_lift` (number `>= 0`) — excludes items where `reach * impact * confidence` falls below this floor
+- `min_roi` (number `>= 0`) — excludes items where `(reach * impact * confidence) / effort` falls below this floor
 - `max_results` (positive integer) — returns only the top N items after ranking
 
 ## Scoring
