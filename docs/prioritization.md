@@ -42,8 +42,8 @@ Optional ranking filters:
 - `exclude_channels` (list of strings) — excludes experiments whose `channel` metadata matches this deny-list (case-insensitive, trimmed)
 - `sort_by` (string, default `score`) — ranking metric. One of: `score`, `base_score`, `expected_lift`, `reach_per_effort`, `confidence_weighted_impact`, `roi`, `risk_adjusted_score`, `name`
 - `confidence_boost_weight` (number in `0..1`, default `0.3`) — controls how strongly confidence-weighted impact normalization influences the final score. `0` uses pure base score, `1` uses only normalized confidence-weighted impact scaling
-- `channel_score_multipliers` (mapping `channel -> number > 0`) — optional per-channel execution-capacity weight applied after confidence boosting (channel match is case-insensitive + trimmed)
-- `owner_score_multipliers` (mapping `owner -> number > 0`) — optional per-owner bandwidth weight applied after channel multipliers (owner match is case-insensitive + trimmed)
+- `channel_score_multipliers` (mapping `channel -> number >= 0`) — optional per-channel execution-capacity weight applied after confidence boosting (channel match is case-insensitive + trimmed). Use `0` to temporarily pause a channel lane without deleting rows.
+- `owner_score_multipliers` (mapping `owner -> number >= 0`) — optional per-owner bandwidth weight applied after channel multipliers (owner match is case-insensitive + trimmed). Use `0` to pause an owner lane during capacity constraints.
 
 ## Scoring
 

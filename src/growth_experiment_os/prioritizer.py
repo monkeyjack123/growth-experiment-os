@@ -104,10 +104,12 @@ def rank_experiments(
         score fully driven by normalized confidence-adjusted impact.
       - channel_score_multipliers (dict[str, float]): optional per-channel score multipliers
         applied after confidence boosting. Keys are matched case-insensitively with trim.
-        Values must be > 0. Useful when a channel has more/less immediate execution capacity.
+        Values must be >= 0. Set to 0 to temporarily suppress a channel from top-ranked
+        output without deleting its experiment rows.
       - owner_score_multipliers (dict[str, float]): optional per-owner score multipliers
         applied after channel multipliers. Keys are matched case-insensitively with trim.
-        Values must be > 0. Useful when specific owners have more/less available bandwidth.
+        Values must be >= 0. Set to 0 to temporarily suppress an owner lane while
+        capacity is constrained.
 
     Score formula:
       base_score * ((1 - confidence_boost_weight) + confidence_boost_weight * normalized_confidence_impact) * channel_multiplier * owner_multiplier
@@ -165,9 +167,9 @@ def rank_experiments(
                 raise ValueError(
                     f"channel_score_multipliers value must be numeric for channel '{raw_channel}'"
                 ) from exc
-            if multiplier <= 0:
+            if multiplier < 0:
                 raise ValueError(
-                    f"channel_score_multipliers value must be > 0 for channel '{raw_channel}'"
+                    f"channel_score_multipliers value must be >= 0 for channel '{raw_channel}'"
                 )
             normalized_channel_multipliers[channel_key] = multiplier
 
@@ -183,9 +185,9 @@ def rank_experiments(
                 raise ValueError(
                     f"owner_score_multipliers value must be numeric for owner '{raw_owner}'"
                 ) from exc
-            if multiplier <= 0:
+            if multiplier < 0:
                 raise ValueError(
-                    f"owner_score_multipliers value must be > 0 for owner '{raw_owner}'"
+                    f"owner_score_multipliers value must be >= 0 for owner '{raw_owner}'"
                 )
             normalized_owner_multipliers[owner_key] = multiplier
 

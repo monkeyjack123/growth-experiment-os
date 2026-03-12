@@ -568,14 +568,30 @@ class PrioritizerTests(unittest.TestCase):
 
         self.assertAlmostEqual(ranked[0].score, 226.8)
 
+    def test_allows_zero_channel_multiplier_to_pause_channel(self):
+        experiments = [
+            {"name": "Email nurture", "channel": "email", "reach": 600, "impact": 0.7, "confidence": 0.9, "effort": 2},
+            {"name": "Web pricing", "channel": "web", "reach": 600, "impact": 0.7, "confidence": 0.9, "effort": 2},
+        ]
+
+        ranked = rank_experiments(
+            experiments,
+            confidence_boost_weight=0,
+            channel_score_multipliers={"email": 0, "web": 1},
+        )
+
+        by_name = {item.name: item for item in ranked}
+        self.assertAlmostEqual(by_name["Email nurture"].score, 0.0)
+        self.assertGreater(by_name["Web pricing"].score, by_name["Email nurture"].score)
+
     def test_rejects_invalid_channel_score_multipliers(self):
         experiments = [{"name": "One", "reach": 100, "impact": 1, "confidence": 0.8, "effort": 1}]
 
         with self.assertRaisesRegex(ValueError, "channel_score_multipliers cannot contain empty channel keys"):
             rank_experiments(experiments, channel_score_multipliers={" ": 1.1})
 
-        with self.assertRaisesRegex(ValueError, "channel_score_multipliers value must be > 0"):
-            rank_experiments(experiments, channel_score_multipliers={"email": 0})
+        with self.assertRaisesRegex(ValueError, "channel_score_multipliers value must be >= 0"):
+            rank_experiments(experiments, channel_score_multipliers={"email": -0.1})
 
         with self.assertRaisesRegex(ValueError, "channel_score_multipliers value must be numeric"):
             rank_experiments(experiments, channel_score_multipliers={"email": "high"})
@@ -609,14 +625,30 @@ class PrioritizerTests(unittest.TestCase):
 
         self.assertAlmostEqual(ranked[0].score, 207.9)
 
+    def test_allows_zero_owner_multiplier_to_pause_owner_lane(self):
+        experiments = [
+            {"name": "Lifecycle email", "owner": "Growth", "reach": 600, "impact": 0.7, "confidence": 0.9, "effort": 2},
+            {"name": "Pricing page", "owner": "Product", "reach": 600, "impact": 0.7, "confidence": 0.9, "effort": 2},
+        ]
+
+        ranked = rank_experiments(
+            experiments,
+            confidence_boost_weight=0,
+            owner_score_multipliers={"growth": 0, "product": 1},
+        )
+
+        by_name = {item.name: item for item in ranked}
+        self.assertAlmostEqual(by_name["Lifecycle email"].score, 0.0)
+        self.assertGreater(by_name["Pricing page"].score, by_name["Lifecycle email"].score)
+
     def test_rejects_invalid_owner_score_multipliers(self):
         experiments = [{"name": "One", "reach": 100, "impact": 1, "confidence": 0.8, "effort": 1}]
 
         with self.assertRaisesRegex(ValueError, "owner_score_multipliers cannot contain empty owner keys"):
             rank_experiments(experiments, owner_score_multipliers={" ": 1.1})
 
-        with self.assertRaisesRegex(ValueError, "owner_score_multipliers value must be > 0"):
-            rank_experiments(experiments, owner_score_multipliers={"growth": 0})
+        with self.assertRaisesRegex(ValueError, "owner_score_multipliers value must be >= 0"):
+            rank_experiments(experiments, owner_score_multipliers={"growth": -0.1})
 
         with self.assertRaisesRegex(ValueError, "owner_score_multipliers value must be numeric"):
             rank_experiments(experiments, owner_score_multipliers={"growth": "high"})
