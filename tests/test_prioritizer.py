@@ -108,6 +108,29 @@ class PrioritizerTests(unittest.TestCase):
         self.assertEqual(len(ranked), 1)
         self.assertEqual(ranked[0].name, "Quick win")
 
+    def test_filters_by_min_effort_threshold(self):
+        experiments = [
+            {"name": "Quick tweak", "reach": 700, "impact": 0.8, "confidence": 0.9, "effort": 1},
+            {"name": "Deeper build", "reach": 1000, "impact": 0.9, "confidence": 0.8, "effort": 5},
+        ]
+
+        ranked = rank_experiments(experiments, min_effort=2)
+
+        self.assertEqual(len(ranked), 1)
+        self.assertEqual(ranked[0].name, "Deeper build")
+
+    def test_rejects_invalid_min_effort(self):
+        experiments = [{"name": "One", "reach": 100, "impact": 1, "confidence": 0.8, "effort": 1}]
+
+        with self.assertRaisesRegex(ValueError, "min_effort must be > 0"):
+            rank_experiments(experiments, min_effort=0)
+
+    def test_rejects_min_effort_above_max_effort(self):
+        experiments = [{"name": "One", "reach": 100, "impact": 1, "confidence": 0.8, "effort": 1}]
+
+        with self.assertRaisesRegex(ValueError, "min_effort must be <= max_effort"):
+            rank_experiments(experiments, min_effort=3, max_effort=2)
+
     def test_rejects_invalid_min_confidence(self):
         experiments = [{"name": "One", "reach": 100, "impact": 1, "confidence": 0.8, "effort": 1}]
 

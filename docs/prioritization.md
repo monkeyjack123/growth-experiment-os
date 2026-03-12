@@ -20,6 +20,7 @@ If required fields are missing or contain non-numeric values, the function raise
 Optional ranking filters:
 
 - `min_confidence` (number in `0..1`) — excludes items below this threshold before scoring
+- `min_effort` (number `> 0`) — excludes items with effort smaller than this threshold
 - `max_effort` (number `> 0`) — excludes items with effort greater than this threshold
 - `min_reach` (number `>= 0`) — excludes items with reach smaller than this threshold
 - `min_impact` (number `>= 0`) — excludes items with impact smaller than this threshold

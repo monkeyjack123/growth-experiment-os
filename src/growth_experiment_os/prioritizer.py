@@ -41,6 +41,7 @@ def _as_float(exp: Mapping[str, float], field: str, name: str) -> float:
 def rank_experiments(
     experiments: Sequence[Mapping[str, float]],
     min_confidence: Optional[float] = None,
+    min_effort: Optional[float] = None,
     max_effort: Optional[float] = None,
     min_reach: Optional[float] = None,
     min_impact: Optional[float] = None,
@@ -72,6 +73,7 @@ def rank_experiments(
 
     Optional args:
       - min_confidence (0-1): skip experiments below this confidence threshold.
+      - min_effort (>0): skip experiments whose effort is below this threshold.
       - max_effort (>0): skip experiments whose effort exceeds this threshold.
       - min_reach (>=0): skip experiments below this audience threshold.
       - min_impact: skip experiments below this minimum impact score.
@@ -107,8 +109,12 @@ def rank_experiments(
 
     if min_confidence is not None and not 0 <= float(min_confidence) <= 1:
         raise ValueError("min_confidence must be within [0, 1]")
+    if min_effort is not None and float(min_effort) <= 0:
+        raise ValueError("min_effort must be > 0")
     if max_effort is not None and float(max_effort) <= 0:
         raise ValueError("max_effort must be > 0")
+    if min_effort is not None and max_effort is not None and float(min_effort) > float(max_effort):
+        raise ValueError("min_effort must be <= max_effort when both are provided")
     if min_reach is not None and float(min_reach) < 0:
         raise ValueError("min_reach must be >= 0")
     if min_impact is not None and float(min_impact) < 0:
@@ -222,6 +228,8 @@ def rank_experiments(
             continue
 
         if min_confidence is not None and confidence < float(min_confidence):
+            continue
+        if min_effort is not None and effort < float(min_effort):
             continue
         if max_effort is not None and effort > float(max_effort):
             continue
