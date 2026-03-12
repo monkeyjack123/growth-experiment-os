@@ -318,6 +318,96 @@ class PrioritizerTests(unittest.TestCase):
 
         self.assertEqual([item.name for item in ranked], ["High lift", "Low effort"])
 
+    def test_filters_by_max_risk(self):
+        experiments = [
+            {"name": "Safer", "reach": 600, "impact": 0.7, "confidence": 0.9, "effort": 2, "risk": 0.2},
+            {"name": "Risky", "reach": 1200, "impact": 0.9, "confidence": 0.8, "effort": 2, "risk": 0.8},
+        ]
+
+        ranked = rank_experiments(experiments, max_risk=0.5)
+
+        self.assertEqual(len(ranked), 1)
+        self.assertEqual(ranked[0].name, "Safer")
+
+    def test_sorts_by_risk_adjusted_score_when_requested(self):
+        experiments = [
+            {"name": "High score high risk", "reach": 1000, "impact": 0.8, "confidence": 0.9, "effort": 2, "risk": 0.8},
+            {"name": "Solid safer", "reach": 850, "impact": 0.75, "confidence": 0.9, "effort": 2, "risk": 0.1},
+        ]
+
+        ranked = rank_experiments(experiments, sort_by="risk_adjusted_score")
+
+        self.assertEqual(ranked[0].name, "Solid safer")
+        self.assertGreater(ranked[0].risk_adjusted_score, ranked[1].risk_adjusted_score)
+
+    def test_defaults_missing_risk_to_zero(self):
+        experiments = [
+            {"name": "No risk field", "reach": 500, "impact": 0.7, "confidence": 0.8, "effort": 2},
+        ]
+
+        ranked = rank_experiments(experiments)
+
+        self.assertEqual(ranked[0].risk, 0.0)
+        self.assertEqual(ranked[0].risk_adjusted_score, ranked[0].score)
+
+    def test_rejects_invalid_risk_inputs(self):
+        experiments = [{"name": "Bad risk", "reach": 500, "impact": 0.7, "confidence": 0.8, "effort": 2, "risk": 1.2}]
+
+        with self.assertRaisesRegex(ValueError, "risk must be within \[0, 1\]"):
+            rank_experiments(experiments)
+
+        with self.assertRaisesRegex(ValueError, "max_risk must be within \[0, 1\]"):
+            rank_experiments(experiments=[{"name": "Good", "reach": 100, "impact": 1, "confidence": 0.8, "effort": 1}], max_risk=-0.1)
+
+    def test_filters_by_min_risk_adjusted_score(self):
+        experiments = [
+            {"name": "High risk", "reach": 1200, "impact": 0.9, "confidence": 0.8, "effort": 2, "risk": 0.8},
+            {"name": "Balanced", "reach": 900, "impact": 0.7, "confidence": 0.9, "effort": 2, "risk": 0.1},
+        ]
+
+        ranked = rank_experiments(experiments, min_risk_adjusted_score=150)
+
+        self.assertEqual(len(ranked), 1)
+        self.assertEqual(ranked[0].name, "Balanced")
+
+    def test_rejects_invalid_min_risk_adjusted_score(self):
+        experiments = [{"name": "One", "reach": 100, "impact": 1, "confidence": 0.8, "effort": 1}]
+
+        with self.assertRaisesRegex(ValueError, "min_risk_adjusted_score must be >= 0"):
+            rank_experiments(experiments, min_risk_adjusted_score=-1)
+
+    def test_applies_confidence_boost_weight_zero_as_plain_base_score(self):
+        experiments = [
+            {"name": "A", "reach": 1000, "impact": 0.5, "confidence": 0.8, "effort": 2},
+            {"name": "B", "reach": 800, "impact": 0.6, "confidence": 0.9, "effort": 2},
+        ]
+
+        ranked = rank_experiments(experiments, confidence_boost_weight=0)
+
+        for item in ranked:
+            self.assertAlmostEqual(item.score, item.base_score)
+
+    def test_applies_confidence_boost_weight_one_for_full_normalized_boost(self):
+        experiments = [
+            {"name": "Lower CWI", "reach": 1000, "impact": 0.5, "confidence": 0.8, "effort": 2},
+            {"name": "Higher CWI", "reach": 800, "impact": 0.6, "confidence": 0.9, "effort": 2},
+        ]
+
+        ranked = rank_experiments(experiments, confidence_boost_weight=1)
+        by_name = {item.name: item for item in ranked}
+
+        self.assertAlmostEqual(by_name["Lower CWI"].score, 0.0)
+        self.assertAlmostEqual(by_name["Higher CWI"].score, by_name["Higher CWI"].base_score)
+
+    def test_rejects_invalid_confidence_boost_weight(self):
+        experiments = [{"name": "One", "reach": 100, "impact": 1, "confidence": 0.8, "effort": 1}]
+
+        with self.assertRaisesRegex(ValueError, "confidence_boost_weight must be within \[0, 1\]"):
+            rank_experiments(experiments, confidence_boost_weight=-0.1)
+
+        with self.assertRaisesRegex(ValueError, "confidence_boost_weight must be within \[0, 1\]"):
+            rank_experiments(experiments, confidence_boost_weight=1.1)
+
     def test_rejects_invalid_sort_by(self):
         experiments = [{"name": "One", "reach": 100, "impact": 1, "confidence": 0.8, "effort": 1}]
 

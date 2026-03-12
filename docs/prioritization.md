@@ -29,10 +29,13 @@ Optional ranking filters:
 - `min_reach_per_effort` (number `>= 0`) — excludes items where `reach / effort` falls below this floor
 - `min_expected_lift` (number `>= 0`) — excludes items where `reach * impact * confidence` falls below this floor
 - `min_roi` (number `>= 0`) — excludes items where `(reach * impact * confidence) / effort` falls below this floor
+- `max_risk` (number in `0..1`) — excludes items whose `risk` is above this threshold (`risk` defaults to `0` when omitted)
+- `min_risk_adjusted_score` (number `>= 0`) — excludes items whose `risk_adjusted_score` is below this threshold
 - `max_results` (positive integer) — returns only the top N items after ranking
 - `include_names` (list of strings) — keeps only experiments whose names match this allow-list (case-insensitive, trimmed)
 - `exclude_names` (list of strings) — excludes experiments whose names match this deny-list (case-insensitive, trimmed)
-- `sort_by` (string, default `score`) — ranking metric. One of: `score`, `base_score`, `expected_lift`, `reach_per_effort`, `confidence_weighted_impact`, `roi`
+- `sort_by` (string, default `score`) — ranking metric. One of: `score`, `base_score`, `expected_lift`, `reach_per_effort`, `confidence_weighted_impact`, `roi`, `risk_adjusted_score`
+- `confidence_boost_weight` (number in `0..1`, default `0.3`) — controls how strongly confidence-weighted impact normalization influences the final score. `0` uses pure base score, `1` uses only normalized confidence-weighted impact scaling
 
 ## Scoring
 
@@ -40,9 +43,9 @@ Base score:
 
 `reach * impact * confidence / effort`
 
-Then a light confidence-weighted impact multiplier is applied:
+Then a configurable confidence-weighted impact multiplier is applied:
 
-`base_score * (0.7 + 0.3 * normalized(impact * confidence))`
+`base_score * ((1 - confidence_boost_weight) + confidence_boost_weight * normalized(impact * confidence))`
 
 This keeps RICE-like behavior while preferring higher-confidence opportunities.
 
@@ -57,6 +60,8 @@ Each ranked item contains:
 - `confidence_weighted_impact` (`impact * confidence`)
 - `expected_lift` (`reach * impact * confidence`, absolute upside before effort penalty)
 - `reach_per_effort` (`reach / effort`, operational leverage for execution planning)
+- `risk` (`0..1`, optional input, defaults to `0`)
+- `risk_adjusted_score` (`score * (1 - risk)`, useful when sequencing with downside constraints)
 
 ## Determinism
 

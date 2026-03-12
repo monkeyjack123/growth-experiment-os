@@ -13,6 +13,8 @@ class RankedExperiment:
     expected_lift: float
     reach_per_effort: float
     roi: float
+    risk: float
+    risk_adjusted_score: float
 
 
 def _normalize(value: float, minimum: float, maximum: float) -> float:
@@ -46,10 +48,13 @@ def rank_experiments(
     min_reach_per_effort: Optional[float] = None,
     min_expected_lift: Optional[float] = None,
     min_roi: Optional[float] = None,
+    max_risk: Optional[float] = None,
+    min_risk_adjusted_score: Optional[float] = None,
     max_results: Optional[int] = None,
     include_names: Optional[Sequence[str]] = None,
     exclude_names: Optional[Sequence[str]] = None,
     sort_by: str = "score",
+    confidence_boost_weight: float = 0.3,
 ) -> List[RankedExperiment]:
     """Rank experiments by a confidence-adjusted RICE-like score.
 
@@ -71,14 +76,19 @@ def rank_experiments(
       - min_reach_per_effort (>=0): skip experiments whose reach/effort efficiency is below this floor.
       - min_expected_lift (>=0): skip experiments whose expected lift (reach*impact*confidence) is below this floor.
       - min_roi (>=0): skip experiments whose expected_lift/effort is below this floor.
+      - max_risk (0-1): skip experiments whose risk exceeds this threshold. If an experiment has no risk field, risk defaults to 0.
+      - min_risk_adjusted_score (>=0): skip experiments below this final risk-adjusted score floor.
       - max_results (>0 integer): return only the top N ranked experiments.
       - include_names (list[str]): keep only experiments whose names match this allow-list (case-insensitive, trimmed).
       - exclude_names (list[str]): skip experiments whose names match this deny-list (case-insensitive, trimmed).
       - sort_by (str): ranking metric. One of: score, base_score, expected_lift,
-        reach_per_effort, confidence_weighted_impact, roi.
+        reach_per_effort, confidence_weighted_impact, roi, risk_adjusted_score.
+      - confidence_boost_weight (0-1): how strongly to weight the confidence-adjusted
+        impact normalization boost in the final score. 0 disables the boost; 1 makes
+        score fully driven by normalized confidence-adjusted impact.
 
     Score formula:
-      ((reach * impact * confidence) / effort) * (0.7 + 0.3 * normalized_confidence_impact)
+      base_score * ((1 - confidence_boost_weight) + confidence_boost_weight * normalized_confidence_impact)
 
     The extra multiplier lightly favors higher confidence-adjusted impact,
     while keeping output deterministic through a tie-break on name.
@@ -107,9 +117,15 @@ def rank_experiments(
         raise ValueError("min_expected_lift must be >= 0")
     if min_roi is not None and float(min_roi) < 0:
         raise ValueError("min_roi must be >= 0")
+    if max_risk is not None and not 0 <= float(max_risk) <= 1:
+        raise ValueError("max_risk must be within [0, 1]")
+    if min_risk_adjusted_score is not None and float(min_risk_adjusted_score) < 0:
+        raise ValueError("min_risk_adjusted_score must be >= 0")
     if max_results is not None:
         if int(max_results) != max_results or int(max_results) <= 0:
             raise ValueError("max_results must be a positive integer")
+    if not 0 <= float(confidence_boost_weight) <= 1:
+        raise ValueError("confidence_boost_weight must be within [0, 1]")
 
     sort_key = str(sort_by).strip().lower()
     allowed_sort_keys = {
@@ -119,10 +135,11 @@ def rank_experiments(
         "reach_per_effort",
         "confidence_weighted_impact",
         "roi",
+        "risk_adjusted_score",
     }
     if sort_key not in allowed_sort_keys:
         raise ValueError(
-            "sort_by must be one of: score, base_score, expected_lift, reach_per_effort, confidence_weighted_impact, roi"
+            "sort_by must be one of: score, base_score, expected_lift, reach_per_effort, confidence_weighted_impact, roi, risk_adjusted_score"
         )
 
     include_set: Optional[Set[str]] = None
@@ -144,6 +161,10 @@ def rank_experiments(
         effort = _as_float(exp, "effort", name)
         reach = _as_float(exp, "reach", name)
         impact = _as_float(exp, "impact", name)
+        try:
+            risk = float(exp.get("risk", 0.0))
+        except (TypeError, ValueError) as exc:
+            raise ValueError(f"field 'risk' must be numeric for experiment '{name}'") from exc
 
         if not 0 <= confidence <= 1:
             raise ValueError(f"confidence must be within [0, 1] for experiment '{name}'")
@@ -153,6 +174,8 @@ def rank_experiments(
             raise ValueError(f"impact must be >= 0 for experiment '{name}'")
         if effort <= 0:
             raise ValueError(f"effort must be > 0 for experiment '{name}'")
+        if not 0 <= risk <= 1:
+            raise ValueError(f"risk must be within [0, 1] for experiment '{name}'")
 
         normalized_name = name.strip().lower()
         if include_set is not None and normalized_name not in include_set:
@@ -187,6 +210,9 @@ def rank_experiments(
         if min_roi is not None and base_score < float(min_roi):
             continue
 
+        if max_risk is not None and risk > float(max_risk):
+            continue
+
         if min_base_score is not None and base_score < float(min_base_score):
             continue
 
@@ -206,13 +232,16 @@ def rank_experiments(
         impact = float(exp["impact"])
         confidence = float(exp["confidence"])
         effort = float(exp["effort"])
+        risk = float(exp.get("risk", 0.0))
 
         confidence_weighted_impact = impact * confidence
         expected_lift = reach * impact * confidence
         reach_per_effort = reach / effort
         base_score = expected_lift / effort
-        confidence_boost = 0.7 + 0.3 * _normalize(confidence_weighted_impact, cwi_min, cwi_max)
+        normalized_cwi = _normalize(confidence_weighted_impact, cwi_min, cwi_max)
+        confidence_boost = (1 - float(confidence_boost_weight)) + float(confidence_boost_weight) * normalized_cwi
         score = base_score * confidence_boost
+        risk_adjusted_score = score * (1 - risk)
 
         ranked.append(
             RankedExperiment(
@@ -223,11 +252,20 @@ def rank_experiments(
                 expected_lift=round(expected_lift, 4),
                 reach_per_effort=round(reach_per_effort, 4),
                 roi=round(base_score, 4),
+                risk=round(risk, 4),
+                risk_adjusted_score=round(risk_adjusted_score, 4),
             )
         )
 
     if min_score is not None:
         ranked = [item for item in ranked if item.score >= float(min_score)]
+
+    if min_risk_adjusted_score is not None:
+        ranked = [
+            item
+            for item in ranked
+            if item.risk_adjusted_score >= float(min_risk_adjusted_score)
+        ]
 
     ordered = sorted(ranked, key=lambda item: (-getattr(item, sort_key), item.name.lower()))
     if max_results is not None:
