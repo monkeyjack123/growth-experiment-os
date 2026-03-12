@@ -508,6 +508,37 @@ class PrioritizerTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "exclude_owners must contain at least one non-empty owner"):
             rank_experiments(experiments, exclude_owners=[""])
 
+    def test_filters_by_include_channels(self):
+        experiments = [
+            {"name": "Email lifecycle", "channel": "email", "reach": 900, "impact": 0.7, "confidence": 0.9, "effort": 2},
+            {"name": "Pricing page", "channel": "web", "reach": 950, "impact": 0.8, "confidence": 0.8, "effort": 2},
+        ]
+
+        ranked = rank_experiments(experiments, include_channels=[" email "])
+
+        self.assertEqual(len(ranked), 1)
+        self.assertEqual(ranked[0].name, "Email lifecycle")
+
+    def test_filters_by_exclude_channels(self):
+        experiments = [
+            {"name": "Email lifecycle", "channel": "email", "reach": 900, "impact": 0.7, "confidence": 0.9, "effort": 2},
+            {"name": "Pricing page", "channel": "web", "reach": 950, "impact": 0.8, "confidence": 0.8, "effort": 2},
+        ]
+
+        ranked = rank_experiments(experiments, exclude_channels=["web"])
+
+        self.assertEqual(len(ranked), 1)
+        self.assertEqual(ranked[0].name, "Email lifecycle")
+
+    def test_rejects_empty_channel_filters(self):
+        experiments = [{"name": "One", "reach": 100, "impact": 1, "confidence": 0.8, "effort": 1}]
+
+        with self.assertRaisesRegex(ValueError, "include_channels must contain at least one non-empty channel"):
+            rank_experiments(experiments, include_channels=["  "])
+
+        with self.assertRaisesRegex(ValueError, "exclude_channels must contain at least one non-empty channel"):
+            rank_experiments(experiments, exclude_channels=[""])
+
     def test_rejects_invalid_sort_by(self):
         experiments = [{"name": "One", "reach": 100, "impact": 1, "confidence": 0.8, "effort": 1}]
 

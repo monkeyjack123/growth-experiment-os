@@ -38,6 +38,8 @@ Optional ranking filters:
 - `name_contains` (non-empty string) — keeps only experiments whose name includes this case-insensitive substring (after trim)
 - `include_owners` (list of strings) — keeps only experiments whose `owner` metadata matches this allow-list (case-insensitive, trimmed)
 - `exclude_owners` (list of strings) — excludes experiments whose `owner` metadata matches this deny-list (case-insensitive, trimmed)
+- `include_channels` (list of strings) — keeps only experiments whose `channel` metadata matches this allow-list (case-insensitive, trimmed)
+- `exclude_channels` (list of strings) — excludes experiments whose `channel` metadata matches this deny-list (case-insensitive, trimmed)
 - `sort_by` (string, default `score`) — ranking metric. One of: `score`, `base_score`, `expected_lift`, `reach_per_effort`, `confidence_weighted_impact`, `roi`, `risk_adjusted_score`, `name`
 - `confidence_boost_weight` (number in `0..1`, default `0.3`) — controls how strongly confidence-weighted impact normalization influences the final score. `0` uses pure base score, `1` uses only normalized confidence-weighted impact scaling
 

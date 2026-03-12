@@ -59,6 +59,8 @@ def rank_experiments(
     name_contains: Optional[str] = None,
     include_owners: Optional[Sequence[str]] = None,
     exclude_owners: Optional[Sequence[str]] = None,
+    include_channels: Optional[Sequence[str]] = None,
+    exclude_channels: Optional[Sequence[str]] = None,
     sort_by: str = "score",
     confidence_boost_weight: float = 0.3,
 ) -> List[RankedExperiment]:
@@ -91,6 +93,8 @@ def rank_experiments(
       - name_contains (str): keep only experiments whose names include this case-insensitive substring.
       - include_owners (list[str]): keep only experiments assigned to owners in this allow-list (case-insensitive, trimmed).
       - exclude_owners (list[str]): skip experiments assigned to owners in this deny-list (case-insensitive, trimmed).
+      - include_channels (list[str]): keep only experiments assigned to channels in this allow-list (case-insensitive, trimmed).
+      - exclude_channels (list[str]): skip experiments assigned to channels in this deny-list (case-insensitive, trimmed).
       - sort_by (str): ranking metric. One of: score, base_score, expected_lift,
         reach_per_effort, confidence_weighted_impact, roi, risk_adjusted_score, name.
       - confidence_boost_weight (0-1): how strongly to weight the confidence-adjusted
@@ -191,6 +195,22 @@ def rank_experiments(
         if not exclude_owner_set:
             raise ValueError("exclude_owners must contain at least one non-empty owner")
 
+    include_channel_set: Optional[Set[str]] = None
+    if include_channels is not None:
+        include_channel_set = {
+            str(channel).strip().lower() for channel in include_channels if str(channel).strip()
+        }
+        if not include_channel_set:
+            raise ValueError("include_channels must contain at least one non-empty channel")
+
+    exclude_channel_set: Optional[Set[str]] = None
+    if exclude_channels is not None:
+        exclude_channel_set = {
+            str(channel).strip().lower() for channel in exclude_channels if str(channel).strip()
+        }
+        if not exclude_channel_set:
+            raise ValueError("exclude_channels must contain at least one non-empty channel")
+
     validated: List[Mapping[str, float]] = []
     for exp in experiments:
         name = str(exp.get("name", "<unknown>"))
@@ -216,6 +236,7 @@ def rank_experiments(
 
         normalized_name = name.strip().lower()
         normalized_owner = str(exp.get("owner", "")).strip().lower()
+        normalized_channel = str(exp.get("channel", "")).strip().lower()
         if include_set is not None and normalized_name not in include_set:
             continue
         if exclude_set is not None and normalized_name in exclude_set:
@@ -225,6 +246,10 @@ def rank_experiments(
         if include_owner_set is not None and normalized_owner not in include_owner_set:
             continue
         if exclude_owner_set is not None and normalized_owner in exclude_owner_set:
+            continue
+        if include_channel_set is not None and normalized_channel not in include_channel_set:
+            continue
+        if exclude_channel_set is not None and normalized_channel in exclude_channel_set:
             continue
 
         if min_confidence is not None and confidence < float(min_confidence):
