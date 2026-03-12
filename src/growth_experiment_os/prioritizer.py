@@ -82,7 +82,7 @@ def rank_experiments(
       - include_names (list[str]): keep only experiments whose names match this allow-list (case-insensitive, trimmed).
       - exclude_names (list[str]): skip experiments whose names match this deny-list (case-insensitive, trimmed).
       - sort_by (str): ranking metric. One of: score, base_score, expected_lift,
-        reach_per_effort, confidence_weighted_impact, roi, risk_adjusted_score.
+        reach_per_effort, confidence_weighted_impact, roi, risk_adjusted_score, name.
       - confidence_boost_weight (0-1): how strongly to weight the confidence-adjusted
         impact normalization boost in the final score. 0 disables the boost; 1 makes
         score fully driven by normalized confidence-adjusted impact.
@@ -136,10 +136,11 @@ def rank_experiments(
         "confidence_weighted_impact",
         "roi",
         "risk_adjusted_score",
+        "name",
     }
     if sort_key not in allowed_sort_keys:
         raise ValueError(
-            "sort_by must be one of: score, base_score, expected_lift, reach_per_effort, confidence_weighted_impact, roi, risk_adjusted_score"
+            "sort_by must be one of: score, base_score, expected_lift, reach_per_effort, confidence_weighted_impact, roi, risk_adjusted_score, name"
         )
 
     include_set: Optional[Set[str]] = None
@@ -267,7 +268,10 @@ def rank_experiments(
             if item.risk_adjusted_score >= float(min_risk_adjusted_score)
         ]
 
-    ordered = sorted(ranked, key=lambda item: (-getattr(item, sort_key), item.name.lower()))
+    if sort_key == "name":
+        ordered = sorted(ranked, key=lambda item: item.name.lower())
+    else:
+        ordered = sorted(ranked, key=lambda item: (-getattr(item, sort_key), item.name.lower()))
     if max_results is not None:
         return ordered[: int(max_results)]
     return ordered

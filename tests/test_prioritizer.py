@@ -408,6 +408,17 @@ class PrioritizerTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "confidence_boost_weight must be within \[0, 1\]"):
             rank_experiments(experiments, confidence_boost_weight=1.1)
 
+    def test_sorts_by_name_alphabetically_when_requested(self):
+        experiments = [
+            {"name": "Zulu", "reach": 100, "impact": 1, "confidence": 0.8, "effort": 1},
+            {"name": "alpha", "reach": 100, "impact": 1, "confidence": 0.8, "effort": 1},
+            {"name": "Bravo", "reach": 100, "impact": 1, "confidence": 0.8, "effort": 1},
+        ]
+
+        ranked = rank_experiments(experiments, sort_by="name")
+
+        self.assertEqual([item.name for item in ranked], ["alpha", "Bravo", "Zulu"])
+
     def test_rejects_invalid_sort_by(self):
         experiments = [{"name": "One", "reach": 100, "impact": 1, "confidence": 0.8, "effort": 1}]
 
