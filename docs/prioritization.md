@@ -35,7 +35,9 @@ Optional ranking filters:
 - `include_names` (list of strings) — keeps only experiments whose names match this allow-list (case-insensitive, trimmed)
 - `exclude_names` (list of strings) — excludes experiments whose names match this deny-list (case-insensitive, trimmed)
 - `name_contains` (non-empty string) — keeps only experiments whose name includes this case-insensitive substring (after trim)
-- `sort_by` (string, default `score`) — ranking metric. One of: `score`, `base_score`, `expected_lift`, `reach_per_effort`, `confidence_weighted_impact`, `roi`, `risk_adjusted_score`
+- `include_owners` (list of strings) — keeps only experiments whose `owner` metadata matches this allow-list (case-insensitive, trimmed)
+- `exclude_owners` (list of strings) — excludes experiments whose `owner` metadata matches this deny-list (case-insensitive, trimmed)
+- `sort_by` (string, default `score`) — ranking metric. One of: `score`, `base_score`, `expected_lift`, `reach_per_effort`, `confidence_weighted_impact`, `roi`, `risk_adjusted_score`, `name`
 - `confidence_boost_weight` (number in `0..1`, default `0.3`) — controls how strongly confidence-weighted impact normalization influences the final score. `0` uses pure base score, `1` uses only normalized confidence-weighted impact scaling
 
 ## Scoring
@@ -55,6 +57,8 @@ This keeps RICE-like behavior while preferring higher-confidence opportunities.
 Each ranked item contains:
 
 - `name`
+- `owner` (optional owner metadata copied from input for routing)
+- `channel` (optional execution channel metadata copied from input for routing)
 - `score` (final confidence-adjusted prioritization score)
 - `base_score` (unboosted score: `(reach * impact * confidence) / effort`)
 - `roi` (alias of `base_score` for planning/reporting readability)

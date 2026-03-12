@@ -51,14 +51,16 @@ for item in rank_experiments(
     include_names=["Onboarding email", "SEO refresh"],
     exclude_names=["SEO refresh"],
     name_contains="onboarding",
+    include_owners=["growth"],
+    exclude_owners=["contractor"],
     max_results=1,
     sort_by="risk_adjusted_score",
     confidence_boost_weight=0.3,
 ):
-    print(item.name, item.score, item.expected_lift, item.reach_per_effort)
+    print(item.name, item.owner, item.channel, item.score, item.expected_lift, item.reach_per_effort)
 ```
 
-Use `min_confidence` to exclude low-confidence ideas, `max_effort` to keep only shippable low-lift experiments, `min_reach` to avoid tiny audiences, `min_impact` to cut low-upside ideas, `min_score` to enforce a minimum boosted-score bar, `min_base_score` to enforce a pure RICE-style floor before confidence boost, `min_confidence_weighted_impact` to block ideas that look big but carry weak confidence-adjusted upside, `min_reach_per_effort` to enforce efficiency, `min_expected_lift` to ensure a minimum absolute upside, `min_roi` to enforce expected lift per unit effort, `max_risk` to cap execution risk, `min_risk_adjusted_score` to require a minimum downside-aware score floor, `include_names`/`exclude_names` to quickly scope or block named experiments, `name_contains` to focus on a keyword slice without maintaining exact-name lists, `max_results` to cap output to the top N candidates for sprint planning, `sort_by` to rank by a specific metric (`score`, `base_score`, `expected_lift`, `reach_per_effort`, `confidence_weighted_impact`, `roi`, `risk_adjusted_score`, or `name`), and `confidence_boost_weight` to tune how strongly confidence-adjusted impact normalization affects final scoring (`0` = pure base score, `1` = full normalization influence). Ranked output includes `base_score`/`roi`, `expected_lift` (absolute upside), `reach_per_effort` (execution leverage), and `risk_adjusted_score` to factor downside into sequencing.
+Use `min_confidence` to exclude low-confidence ideas, `max_effort` to keep only shippable low-lift experiments, `min_reach` to avoid tiny audiences, `min_impact` to cut low-upside ideas, `min_score` to enforce a minimum boosted-score bar, `min_base_score` to enforce a pure RICE-style floor before confidence boost, `min_confidence_weighted_impact` to block ideas that look big but carry weak confidence-adjusted upside, `min_reach_per_effort` to enforce efficiency, `min_expected_lift` to ensure a minimum absolute upside, `min_roi` to enforce expected lift per unit effort, `max_risk` to cap execution risk, `min_risk_adjusted_score` to require a minimum downside-aware score floor, `include_names`/`exclude_names` to quickly scope or block named experiments, `name_contains` to focus on a keyword slice without maintaining exact-name lists, `include_owners`/`exclude_owners` to route work to the right operating lane, `max_results` to cap output to the top N candidates for sprint planning, `sort_by` to rank by a specific metric (`score`, `base_score`, `expected_lift`, `reach_per_effort`, `confidence_weighted_impact`, `roi`, `risk_adjusted_score`, or `name`), and `confidence_boost_weight` to tune how strongly confidence-adjusted impact normalization affects final scoring (`0` = pure base score, `1` = full normalization influence). Ranked output includes optional `owner`/`channel` routing metadata plus `base_score`/`roi`, `expected_lift` (absolute upside), `reach_per_effort` (execution leverage), and `risk_adjusted_score` to factor downside into sequencing.
 
 See `docs/prioritization.md` for full scoring and input contract details, including
 clear validation errors for missing/non-numeric required fields and guardrails

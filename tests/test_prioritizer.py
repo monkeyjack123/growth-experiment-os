@@ -436,6 +436,55 @@ class PrioritizerTests(unittest.TestCase):
 
         self.assertEqual([item.name for item in ranked], ["alpha", "Bravo", "Zulu"])
 
+    def test_includes_owner_and_channel_metadata_when_present(self):
+        experiments = [
+            {
+                "name": "Lifecycle email",
+                "owner": "Growth Team",
+                "channel": "email",
+                "reach": 800,
+                "impact": 0.7,
+                "confidence": 0.9,
+                "effort": 2,
+            }
+        ]
+
+        ranked = rank_experiments(experiments)
+
+        self.assertEqual(ranked[0].owner, "Growth Team")
+        self.assertEqual(ranked[0].channel, "email")
+
+    def test_filters_by_include_owners(self):
+        experiments = [
+            {"name": "Email lifecycle", "owner": "Growth", "reach": 900, "impact": 0.7, "confidence": 0.9, "effort": 2},
+            {"name": "Pricing page", "owner": "Product", "reach": 950, "impact": 0.8, "confidence": 0.8, "effort": 2},
+        ]
+
+        ranked = rank_experiments(experiments, include_owners=[" growth "])
+
+        self.assertEqual(len(ranked), 1)
+        self.assertEqual(ranked[0].name, "Email lifecycle")
+
+    def test_filters_by_exclude_owners(self):
+        experiments = [
+            {"name": "Email lifecycle", "owner": "Growth", "reach": 900, "impact": 0.7, "confidence": 0.9, "effort": 2},
+            {"name": "Pricing page", "owner": "Product", "reach": 950, "impact": 0.8, "confidence": 0.8, "effort": 2},
+        ]
+
+        ranked = rank_experiments(experiments, exclude_owners=["product"])
+
+        self.assertEqual(len(ranked), 1)
+        self.assertEqual(ranked[0].name, "Email lifecycle")
+
+    def test_rejects_empty_owner_filters(self):
+        experiments = [{"name": "One", "reach": 100, "impact": 1, "confidence": 0.8, "effort": 1}]
+
+        with self.assertRaisesRegex(ValueError, "include_owners must contain at least one non-empty owner"):
+            rank_experiments(experiments, include_owners=["  "])
+
+        with self.assertRaisesRegex(ValueError, "exclude_owners must contain at least one non-empty owner"):
+            rank_experiments(experiments, exclude_owners=[""])
+
     def test_rejects_invalid_sort_by(self):
         experiments = [{"name": "One", "reach": 100, "impact": 1, "confidence": 0.8, "effort": 1}]
 

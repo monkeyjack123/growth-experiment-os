@@ -11,6 +11,7 @@
 - ✅ Risk-aware prioritization (`max_risk`, `risk_adjusted_score` sort/output) with test coverage
 - ✅ Downside-floor filtering (`min_risk_adjusted_score`) with tests + docs
 - ✅ Keyword-focused slicing via `name_contains` filter for faster campaign-specific planning
+- ✅ Owner-aware filtering (`include_owners`/`exclude_owners`) and owner/channel metadata passthrough for execution routing
 
 ## v0.3
 - Team collaboration

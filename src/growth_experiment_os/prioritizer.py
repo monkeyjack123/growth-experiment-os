@@ -7,6 +7,8 @@ from typing import List, Mapping, Optional, Sequence, Set
 @dataclass(frozen=True)
 class RankedExperiment:
     name: str
+    owner: Optional[str]
+    channel: Optional[str]
     score: float
     base_score: float
     confidence_weighted_impact: float
@@ -54,6 +56,8 @@ def rank_experiments(
     include_names: Optional[Sequence[str]] = None,
     exclude_names: Optional[Sequence[str]] = None,
     name_contains: Optional[str] = None,
+    include_owners: Optional[Sequence[str]] = None,
+    exclude_owners: Optional[Sequence[str]] = None,
     sort_by: str = "score",
     confidence_boost_weight: float = 0.3,
 ) -> List[RankedExperiment]:
@@ -83,6 +87,8 @@ def rank_experiments(
       - include_names (list[str]): keep only experiments whose names match this allow-list (case-insensitive, trimmed).
       - exclude_names (list[str]): skip experiments whose names match this deny-list (case-insensitive, trimmed).
       - name_contains (str): keep only experiments whose names include this case-insensitive substring.
+      - include_owners (list[str]): keep only experiments assigned to owners in this allow-list (case-insensitive, trimmed).
+      - exclude_owners (list[str]): skip experiments assigned to owners in this deny-list (case-insensitive, trimmed).
       - sort_by (str): ranking metric. One of: score, base_score, expected_lift,
         reach_per_effort, confidence_weighted_impact, roi, risk_adjusted_score, name.
       - confidence_boost_weight (0-1): how strongly to weight the confidence-adjusted
@@ -163,6 +169,22 @@ def rank_experiments(
         if not name_query:
             raise ValueError("name_contains must be a non-empty string")
 
+    include_owner_set: Optional[Set[str]] = None
+    if include_owners is not None:
+        include_owner_set = {
+            str(owner).strip().lower() for owner in include_owners if str(owner).strip()
+        }
+        if not include_owner_set:
+            raise ValueError("include_owners must contain at least one non-empty owner")
+
+    exclude_owner_set: Optional[Set[str]] = None
+    if exclude_owners is not None:
+        exclude_owner_set = {
+            str(owner).strip().lower() for owner in exclude_owners if str(owner).strip()
+        }
+        if not exclude_owner_set:
+            raise ValueError("exclude_owners must contain at least one non-empty owner")
+
     validated: List[Mapping[str, float]] = []
     for exp in experiments:
         name = str(exp.get("name", "<unknown>"))
@@ -187,11 +209,16 @@ def rank_experiments(
             raise ValueError(f"risk must be within [0, 1] for experiment '{name}'")
 
         normalized_name = name.strip().lower()
+        normalized_owner = str(exp.get("owner", "")).strip().lower()
         if include_set is not None and normalized_name not in include_set:
             continue
         if exclude_set is not None and normalized_name in exclude_set:
             continue
         if name_query is not None and name_query not in normalized_name:
+            continue
+        if include_owner_set is not None and normalized_owner not in include_owner_set:
+            continue
+        if exclude_owner_set is not None and normalized_owner in exclude_owner_set:
             continue
 
         if min_confidence is not None and confidence < float(min_confidence):
@@ -257,6 +284,8 @@ def rank_experiments(
         ranked.append(
             RankedExperiment(
                 name=name,
+                owner=str(exp.get("owner")).strip() if exp.get("owner") is not None else None,
+                channel=str(exp.get("channel")).strip() if exp.get("channel") is not None else None,
                 score=round(score, 4),
                 base_score=round(base_score, 4),
                 confidence_weighted_impact=round(confidence_weighted_impact, 4),
