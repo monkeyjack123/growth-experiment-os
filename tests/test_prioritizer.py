@@ -580,6 +580,47 @@ class PrioritizerTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "channel_score_multipliers value must be numeric"):
             rank_experiments(experiments, channel_score_multipliers={"email": "high"})
 
+    def test_applies_owner_score_multipliers(self):
+        experiments = [
+            {"name": "Lifecycle email", "owner": "Growth", "reach": 600, "impact": 0.7, "confidence": 0.9, "effort": 2},
+            {"name": "Pricing page", "owner": "Product", "reach": 600, "impact": 0.7, "confidence": 0.9, "effort": 2},
+        ]
+
+        ranked = rank_experiments(
+            experiments,
+            confidence_boost_weight=0,
+            owner_score_multipliers={"growth": 1.2, "product": 0.8},
+        )
+
+        self.assertEqual([item.name for item in ranked], ["Lifecycle email", "Pricing page"])
+        self.assertAlmostEqual(ranked[0].score, 226.8)
+        self.assertAlmostEqual(ranked[1].score, 151.2)
+
+    def test_applies_owner_score_multipliers_case_insensitive(self):
+        experiments = [
+            {"name": "Lifecycle email", "owner": " Growth ", "reach": 600, "impact": 0.7, "confidence": 0.9, "effort": 2},
+        ]
+
+        ranked = rank_experiments(
+            experiments,
+            confidence_boost_weight=0,
+            owner_score_multipliers={"growth": 1.1},
+        )
+
+        self.assertAlmostEqual(ranked[0].score, 207.9)
+
+    def test_rejects_invalid_owner_score_multipliers(self):
+        experiments = [{"name": "One", "reach": 100, "impact": 1, "confidence": 0.8, "effort": 1}]
+
+        with self.assertRaisesRegex(ValueError, "owner_score_multipliers cannot contain empty owner keys"):
+            rank_experiments(experiments, owner_score_multipliers={" ": 1.1})
+
+        with self.assertRaisesRegex(ValueError, "owner_score_multipliers value must be > 0"):
+            rank_experiments(experiments, owner_score_multipliers={"growth": 0})
+
+        with self.assertRaisesRegex(ValueError, "owner_score_multipliers value must be numeric"):
+            rank_experiments(experiments, owner_score_multipliers={"growth": "high"})
+
     def test_rejects_invalid_sort_by(self):
         experiments = [{"name": "One", "reach": 100, "impact": 1, "confidence": 0.8, "effort": 1}]
 

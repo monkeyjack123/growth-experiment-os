@@ -64,6 +64,7 @@ def rank_experiments(
     sort_by: str = "score",
     confidence_boost_weight: float = 0.3,
     channel_score_multipliers: Optional[Mapping[str, float]] = None,
+    owner_score_multipliers: Optional[Mapping[str, float]] = None,
 ) -> List[RankedExperiment]:
     """Rank experiments by a confidence-adjusted RICE-like score.
 
@@ -104,9 +105,12 @@ def rank_experiments(
       - channel_score_multipliers (dict[str, float]): optional per-channel score multipliers
         applied after confidence boosting. Keys are matched case-insensitively with trim.
         Values must be > 0. Useful when a channel has more/less immediate execution capacity.
+      - owner_score_multipliers (dict[str, float]): optional per-owner score multipliers
+        applied after channel multipliers. Keys are matched case-insensitively with trim.
+        Values must be > 0. Useful when specific owners have more/less available bandwidth.
 
     Score formula:
-      base_score * ((1 - confidence_boost_weight) + confidence_boost_weight * normalized_confidence_impact)
+      base_score * ((1 - confidence_boost_weight) + confidence_boost_weight * normalized_confidence_impact) * channel_multiplier * owner_multiplier
 
     The extra multiplier lightly favors higher confidence-adjusted impact,
     while keeping output deterministic through a tie-break on name.
@@ -166,6 +170,24 @@ def rank_experiments(
                     f"channel_score_multipliers value must be > 0 for channel '{raw_channel}'"
                 )
             normalized_channel_multipliers[channel_key] = multiplier
+
+    normalized_owner_multipliers: Dict[str, float] = {}
+    if owner_score_multipliers is not None:
+        for raw_owner, raw_multiplier in owner_score_multipliers.items():
+            owner_key = str(raw_owner).strip().lower()
+            if not owner_key:
+                raise ValueError("owner_score_multipliers cannot contain empty owner keys")
+            try:
+                multiplier = float(raw_multiplier)
+            except (TypeError, ValueError) as exc:
+                raise ValueError(
+                    f"owner_score_multipliers value must be numeric for owner '{raw_owner}'"
+                ) from exc
+            if multiplier <= 0:
+                raise ValueError(
+                    f"owner_score_multipliers value must be > 0 for owner '{raw_owner}'"
+                )
+            normalized_owner_multipliers[owner_key] = multiplier
 
     sort_key = str(sort_by).strip().lower()
     allowed_sort_keys = {
@@ -334,8 +356,10 @@ def rank_experiments(
         normalized_cwi = _normalize(confidence_weighted_impact, cwi_min, cwi_max)
         confidence_boost = (1 - float(confidence_boost_weight)) + float(confidence_boost_weight) * normalized_cwi
         channel_key = str(exp.get("channel", "")).strip().lower()
+        owner_key = str(exp.get("owner", "")).strip().lower()
         channel_multiplier = normalized_channel_multipliers.get(channel_key, 1.0)
-        score = base_score * confidence_boost * channel_multiplier
+        owner_multiplier = normalized_owner_multipliers.get(owner_key, 1.0)
+        score = base_score * confidence_boost * channel_multiplier * owner_multiplier
         risk_adjusted_score = score * (1 - risk)
 
         ranked.append(
