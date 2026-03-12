@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List, Mapping, Optional, Sequence, Set
+from typing import Dict, List, Mapping, Optional, Sequence, Set
 
 
 @dataclass(frozen=True)
@@ -63,6 +63,7 @@ def rank_experiments(
     exclude_channels: Optional[Sequence[str]] = None,
     sort_by: str = "score",
     confidence_boost_weight: float = 0.3,
+    channel_score_multipliers: Optional[Mapping[str, float]] = None,
 ) -> List[RankedExperiment]:
     """Rank experiments by a confidence-adjusted RICE-like score.
 
@@ -100,6 +101,9 @@ def rank_experiments(
       - confidence_boost_weight (0-1): how strongly to weight the confidence-adjusted
         impact normalization boost in the final score. 0 disables the boost; 1 makes
         score fully driven by normalized confidence-adjusted impact.
+      - channel_score_multipliers (dict[str, float]): optional per-channel score multipliers
+        applied after confidence boosting. Keys are matched case-insensitively with trim.
+        Values must be > 0. Useful when a channel has more/less immediate execution capacity.
 
     Score formula:
       base_score * ((1 - confidence_boost_weight) + confidence_boost_weight * normalized_confidence_impact)
@@ -144,6 +148,24 @@ def rank_experiments(
             raise ValueError("max_results must be a positive integer")
     if not 0 <= float(confidence_boost_weight) <= 1:
         raise ValueError("confidence_boost_weight must be within [0, 1]")
+
+    normalized_channel_multipliers: Dict[str, float] = {}
+    if channel_score_multipliers is not None:
+        for raw_channel, raw_multiplier in channel_score_multipliers.items():
+            channel_key = str(raw_channel).strip().lower()
+            if not channel_key:
+                raise ValueError("channel_score_multipliers cannot contain empty channel keys")
+            try:
+                multiplier = float(raw_multiplier)
+            except (TypeError, ValueError) as exc:
+                raise ValueError(
+                    f"channel_score_multipliers value must be numeric for channel '{raw_channel}'"
+                ) from exc
+            if multiplier <= 0:
+                raise ValueError(
+                    f"channel_score_multipliers value must be > 0 for channel '{raw_channel}'"
+                )
+            normalized_channel_multipliers[channel_key] = multiplier
 
     sort_key = str(sort_by).strip().lower()
     allowed_sort_keys = {
@@ -311,7 +333,9 @@ def rank_experiments(
         base_score = expected_lift / effort
         normalized_cwi = _normalize(confidence_weighted_impact, cwi_min, cwi_max)
         confidence_boost = (1 - float(confidence_boost_weight)) + float(confidence_boost_weight) * normalized_cwi
-        score = base_score * confidence_boost
+        channel_key = str(exp.get("channel", "")).strip().lower()
+        channel_multiplier = normalized_channel_multipliers.get(channel_key, 1.0)
+        score = base_score * confidence_boost * channel_multiplier
         risk_adjusted_score = score * (1 - risk)
 
         ranked.append(

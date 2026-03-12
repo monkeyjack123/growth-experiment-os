@@ -539,6 +539,47 @@ class PrioritizerTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "exclude_channels must contain at least one non-empty channel"):
             rank_experiments(experiments, exclude_channels=[""])
 
+    def test_applies_channel_score_multipliers(self):
+        experiments = [
+            {"name": "Email nurture", "channel": "email", "reach": 600, "impact": 0.7, "confidence": 0.9, "effort": 2},
+            {"name": "Web pricing", "channel": "web", "reach": 600, "impact": 0.7, "confidence": 0.9, "effort": 2},
+        ]
+
+        ranked = rank_experiments(
+            experiments,
+            confidence_boost_weight=0,
+            channel_score_multipliers={"email": 1.3, "web": 0.7},
+        )
+
+        self.assertEqual([item.name for item in ranked], ["Email nurture", "Web pricing"])
+        self.assertAlmostEqual(ranked[0].score, 245.7)
+        self.assertAlmostEqual(ranked[1].score, 132.3)
+
+    def test_applies_channel_score_multipliers_case_insensitive(self):
+        experiments = [
+            {"name": "Email nurture", "channel": " Email ", "reach": 600, "impact": 0.7, "confidence": 0.9, "effort": 2},
+        ]
+
+        ranked = rank_experiments(
+            experiments,
+            confidence_boost_weight=0,
+            channel_score_multipliers={"email": 1.2},
+        )
+
+        self.assertAlmostEqual(ranked[0].score, 226.8)
+
+    def test_rejects_invalid_channel_score_multipliers(self):
+        experiments = [{"name": "One", "reach": 100, "impact": 1, "confidence": 0.8, "effort": 1}]
+
+        with self.assertRaisesRegex(ValueError, "channel_score_multipliers cannot contain empty channel keys"):
+            rank_experiments(experiments, channel_score_multipliers={" ": 1.1})
+
+        with self.assertRaisesRegex(ValueError, "channel_score_multipliers value must be > 0"):
+            rank_experiments(experiments, channel_score_multipliers={"email": 0})
+
+        with self.assertRaisesRegex(ValueError, "channel_score_multipliers value must be numeric"):
+            rank_experiments(experiments, channel_score_multipliers={"email": "high"})
+
     def test_rejects_invalid_sort_by(self):
         experiments = [{"name": "One", "reach": 100, "impact": 1, "confidence": 0.8, "effort": 1}]
 
