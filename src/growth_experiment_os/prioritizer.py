@@ -53,6 +53,7 @@ def rank_experiments(
     max_results: Optional[int] = None,
     include_names: Optional[Sequence[str]] = None,
     exclude_names: Optional[Sequence[str]] = None,
+    name_contains: Optional[str] = None,
     sort_by: str = "score",
     confidence_boost_weight: float = 0.3,
 ) -> List[RankedExperiment]:
@@ -81,6 +82,7 @@ def rank_experiments(
       - max_results (>0 integer): return only the top N ranked experiments.
       - include_names (list[str]): keep only experiments whose names match this allow-list (case-insensitive, trimmed).
       - exclude_names (list[str]): skip experiments whose names match this deny-list (case-insensitive, trimmed).
+      - name_contains (str): keep only experiments whose names include this case-insensitive substring.
       - sort_by (str): ranking metric. One of: score, base_score, expected_lift,
         reach_per_effort, confidence_weighted_impact, roi, risk_adjusted_score, name.
       - confidence_boost_weight (0-1): how strongly to weight the confidence-adjusted
@@ -155,6 +157,12 @@ def rank_experiments(
         if not exclude_set:
             raise ValueError("exclude_names must contain at least one non-empty name")
 
+    name_query: Optional[str] = None
+    if name_contains is not None:
+        name_query = str(name_contains).strip().lower()
+        if not name_query:
+            raise ValueError("name_contains must be a non-empty string")
+
     validated: List[Mapping[str, float]] = []
     for exp in experiments:
         name = str(exp.get("name", "<unknown>"))
@@ -182,6 +190,8 @@ def rank_experiments(
         if include_set is not None and normalized_name not in include_set:
             continue
         if exclude_set is not None and normalized_name in exclude_set:
+            continue
+        if name_query is not None and name_query not in normalized_name:
             continue
 
         if min_confidence is not None and confidence < float(min_confidence):

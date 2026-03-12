@@ -308,6 +308,23 @@ class PrioritizerTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "exclude_names must contain at least one non-empty name"):
             rank_experiments(experiments, exclude_names=[""])
 
+    def test_filters_by_name_contains_case_insensitive(self):
+        experiments = [
+            {"name": "Pricing page CTA", "reach": 1000, "impact": 0.7, "confidence": 0.8, "effort": 2},
+            {"name": "Onboarding email", "reach": 800, "impact": 0.9, "confidence": 0.9, "effort": 2},
+            {"name": "Homepage pricing copy", "reach": 700, "impact": 0.6, "confidence": 0.8, "effort": 2},
+        ]
+
+        ranked = rank_experiments(experiments, name_contains=" PRICING ")
+
+        self.assertEqual([item.name for item in ranked], ["Pricing page CTA", "Homepage pricing copy"])
+
+    def test_rejects_empty_name_contains(self):
+        experiments = [{"name": "One", "reach": 100, "impact": 1, "confidence": 0.8, "effort": 1}]
+
+        with self.assertRaisesRegex(ValueError, "name_contains must be a non-empty string"):
+            rank_experiments(experiments, name_contains="   ")
+
     def test_sorts_by_expected_lift_when_requested(self):
         experiments = [
             {"name": "Low effort", "reach": 500, "impact": 0.6, "confidence": 0.9, "effort": 1},

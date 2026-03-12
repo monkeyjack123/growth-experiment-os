@@ -8,6 +8,9 @@
 ## v0.2
 - Integrations and templates
 - Better UX and configuration
+- ✅ Risk-aware prioritization (`max_risk`, `risk_adjusted_score` sort/output) with test coverage
+- ✅ Downside-floor filtering (`min_risk_adjusted_score`) with tests + docs
+- ✅ Keyword-focused slicing via `name_contains` filter for faster campaign-specific planning
 
 ## v0.3
 - Team collaboration
